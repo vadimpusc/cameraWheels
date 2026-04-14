@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Production Invoice Tool</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0a0d14" />
+  <title>Camera Car Production Invoice Tool</title>
   <style>
     :root {
       --bg: #0a0d14;
@@ -506,6 +512,11 @@
       padding: 6px 6px 10px;
     }
 
+    .footer a,
+    .hero p a {
+      text-decoration: none;
+    }
+
     .toolbar {
       display: flex;
       gap: 10px;
@@ -561,19 +572,50 @@
 
     @media (max-width: 820px) {
       body {
-        padding: 12px;
+        padding: 10px;
       }
 
-      .hero,
+      .hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
+      }
+
+      .hero h1 {
+        font-size: 1.3rem;
+      }
+
+      .hero-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .hero-actions button {
+        flex: 1;
+        min-width: calc(50% - 5px);
+        font-size: 0.85rem;
+        padding: 10px 8px;
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
       .panel-inner,
       .day-head,
       .day-body {
-        padding-left: 14px;
-        padding-right: 14px;
+        padding-left: 12px;
+        padding-right: 12px;
       }
 
       .field-grid {
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
       }
 
       .span-8,
@@ -581,11 +623,48 @@
       .span-4,
       .span-3,
       .span-2 {
-        grid-column: span 6;
+        grid-column: span 2;
       }
 
       .summary-mini {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .day-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .day-head-left {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .job {
+        padding: 12px;
+      }
+
+      .job-head {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .job-actions {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 8px;
+      }
+
+      .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tabs button {
+        white-space: nowrap;
+        padding: 10px 14px;
+        font-size: 0.9rem;
       }
     }
 
@@ -610,6 +689,16 @@
       .footer,
       .no-print {
         display: none !important;
+      }
+
+      .print-bold,
+      .print-value.print-bold {
+        font-weight: 700 !important;
+      }
+
+      .footer a,
+      .hero p a {
+        text-decoration: none !important;
       }
 
       .print-only {
@@ -648,15 +737,21 @@
         font-weight: 400;
       }
 
+      .print-bold,
+      .print-value.print-bold {
+        font-weight: 700;
+      }
+
       .print-block p {
         margin: 0 0 4px;
         line-height: 1.35;
-        font-size: 10.5pt;
+        font-size: 11pt;
+        font-weight: 400;
       }
 
       .print-page-num {
         text-align: right;
-        font-size: 10.5pt;
+        font-size: 11pt;
         line-height: 1.35;
       }
 
@@ -665,14 +760,10 @@
         width: 100%;
         border-collapse: collapse;
         table-layout: fixed;
-      }
-
-      .print-table {
-        font-size: 10pt;
+        font-size: 11pt;
       }
 
       .print-money-table {
-        font-size: 10.25pt;
         margin-bottom: 28px;
       }
 
@@ -867,11 +958,8 @@
   <div class="app">
     <header class="hero screen-only">
       <div>
-        <h1>Production Invoice Tool</h1>
-        <p>
-          Multi-job invoice and timesheet app with local autosave, JSON export, dark and light modes,
-          print-ready PDF output, and a clean client-facing print layout. 
-        </p>
+        <h1>Camera Car Production Invoice Tool</h1>
+        <p><a href="https://sanrokuku.com" target="_blank">Created by San Roku Ku</a></p>
       </div>
       <div class="hero-actions">
         <button class="primary" data-action="new-job">+ New Job</button>
@@ -1187,7 +1275,7 @@
         </section>
 
         <footer class="footer screen-only">
-          © <span id="year"></span>. Production Invoice Tool.
+          © <span id="year"></span> <a href="https://sanrokuku.com" target="_blank">Created by San Roku Ku</a>
         </footer>
       </main>
     </div>
@@ -2240,7 +2328,7 @@
             <div class="print-block">
               <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
               <p><span class="print-label">Production Co:</span> <span class="print-value">${esc(job.productionCompany || "")}</span></p>
-              <p><span class="print-label">Job Title:</span> <span class="print-value">${esc(job.title || "")}</span></p>
+              <p><span class="print-label">Job Title:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
             </div>
             <div class="print-block">
               <p><span class="print-value">${esc(job.vehicleName || "")}</span></p>
@@ -2282,9 +2370,9 @@
               ${esc(job.toAddress || "").replace(/\n/g, "<br>")}
               <div class="gap"></div>
               <p><span class="print-label">Prod. Co:</span> <span class="print-value">${esc(job.productionCompany || "")}</span></p>
-              <p><span class="print-label">Job:</span> <span class="print-value">${esc(job.title || "")}</span></p>
+              <p><span class="print-label">Job:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
               <div class="gap"></div>
-              <p><span class="print-value">Payable To ${esc(job.yourName || "Your Name")}</span></p>
+              <p><span class="print-value print-bold">Payable To ${esc(job.yourName || "Your Name")}</span></p>
             </div>
 
             <div class="print-page2-box">
@@ -2358,8 +2446,8 @@
                 <span>${money(expenseTotal)}</span>
               </div>
               <div class="print-total-row print-grand-total">
-                <span><strong>Total incl. expenses</strong></span>
-                <strong>${money(totalValue)}</strong>
+                <span class="print-bold">Total incl. expenses</span>
+                <span class="print-bold">${money(totalValue)}</span>
               </div>
             </div>
           </div>

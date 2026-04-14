@@ -1,17 +1,17 @@
 {
-  "name": "Production Invoice Tool",
-  "short_name": "Invoice Tool",
+  "name": "Camera Car Production Invoice Tool",
+  "short_name": "Camera Car",
   "description": "Production invoice and timesheet app",
-  "start_url": "./Open.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0d14",
   "theme_color": "#0a0d14",
   "orientation": "any",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a0d14' width='512' height='512' rx='100'/><text y='.9em' x='50%' text-anchor='middle' font-size='300'>\ud83d\udcf7</text></svg>",
+      "src": "icon.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
