@@ -1,7 +1,10 @@
-const CACHE_NAME = 'invoice-tool-v1';
+const CACHE_NAME = 'camera-wheels-v2';
 const ASSETS = [
-  './Open.html',
-  './manifest.json'
+  './index.html',
+  './manifest.json',
+  './icon.png',
+  './app.js',
+  './sw.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -47,7 +50,7 @@ self.addEventListener('fetch', (event) => {
         
         return response;
       }).catch(() => {
-        return caches.match('./Open.html');
+        return caches.match('./index.html');
       });
     })
   );
