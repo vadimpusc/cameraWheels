@@ -581,10 +581,18 @@
         align-items: flex-start;
         gap: 14px;
         padding: 16px;
+        border-radius: 20px;
+        background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
       }
 
       .hero h1 {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        opacity: 0.95;
       }
 
       .hero-actions {
@@ -595,8 +603,30 @@
       .hero-actions button {
         flex: 1;
         min-width: calc(50% - 5px);
-        font-size: 0.85rem;
-        padding: 10px 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        padding: 12px 10px;
+        border-radius: 12px;
+        background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+        border: 1px solid rgba(255,255,255,0.12);
+        color: var(--text);
+        transition: all 0.2s ease;
+      }
+
+      .hero-actions button:active {
+        transform: scale(0.97);
+        background: rgba(255,255,255,0.15);
+      }
+
+      .hero-actions button.primary {
+        background: linear-gradient(145deg, #d7b56d, #b89a4d);
+        border-color: #d7b56d;
+        color: #0a0d14;
+        font-weight: 600;
+      }
+
+      .hero-actions button.primary:active {
+        background: linear-gradient(145deg, #c9a85e, #a88a3e);
       }
 
       .main-grid {
