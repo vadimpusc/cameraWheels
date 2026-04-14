@@ -590,9 +590,15 @@
       .hero h1 {
         font-size: 1.25rem;
         font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        background: linear-gradient(135deg, #fff 0%, #d7b56d 100%);
+        letter-spacing: 0.02em;
+        background: linear-gradient(135deg, #eef2f7 0%, #d7b56d 50%, #eef2f7 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      html[data-theme="light"] .hero h1 {
+        background: linear-gradient(135deg, #1a1a1a 0%, #8a7018 50%, #1a1a1a 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
