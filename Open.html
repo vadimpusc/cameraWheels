@@ -1,0 +1,2493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Production Invoice Tool</title>
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --bg-2: #101522;
+      --panel: rgba(255, 255, 255, 0.06);
+      --panel-2: rgba(255, 255, 255, 0.08);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #eef2f7;
+      --muted: #aeb8c7;
+      --label: #d8dee8;
+      --accent: #d7b56d;
+      --danger: #ff8e8e;
+      --success: #9cd1b0;
+      --shadow: 0 24px 60px rgba(0,0,0,0.35);
+      --radius: 22px;
+      --radius-sm: 14px;
+      --max: 1440px;
+      --std: #8db9ff;
+      --half: #c7a1ff;
+      --double: #ffb07f;
+      --office: #85d8ca;
+    }
+
+    html[data-theme="light"] {
+      --bg: #f5f7fb;
+      --bg-2: #e9eef6;
+      --panel: rgba(255, 255, 255, 0.92);
+      --panel-2: rgba(255, 255, 255, 0.98);
+      --line: rgba(10, 20, 40, 0.10);
+      --text: #101622;
+      --muted: #5f6b7b;
+      --label: #283242;
+      --accent: #8b6d2e;
+      --danger: #c84f4f;
+      --success: #2f7b53;
+      --shadow: 0 22px 50px rgba(25,35,60,0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(215,181,109,0.12), transparent 24%),
+        radial-gradient(circle at top center, rgba(60,110,255,0.12), transparent 18%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    }
+
+    body {
+      padding: 16px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      min-height: 44px;
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+      position: relative;
+      z-index: 5;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: var(--panel-2);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    button.primary {
+      background: linear-gradient(180deg, rgba(215,181,109,0.18), rgba(215,181,109,0.10));
+      border-color: rgba(215,181,109,0.4);
+    }
+
+    button.danger {
+      border-color: rgba(255,142,142,0.25);
+      background: linear-gradient(180deg, rgba(255,142,142,0.14), rgba(255,142,142,0.08));
+    }
+
+    button.small {
+      min-height: 36px;
+      padding: 8px 10px;
+      font-size: 0.92rem;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      padding: 14px 14px;
+      outline: none;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+    }
+
+    textarea {
+      min-height: 108px;
+      resize: vertical;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: color-mix(in srgb, var(--muted) 86%, transparent);
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(215,181,109,0.45);
+      box-shadow: 0 0 0 3px rgba(215,181,109,0.12);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .app {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+      position: relative;
+    }
+
+    .shell,
+    .hero,
+    .panel,
+    .day-card {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero::before,
+    .panel::before,
+    .day-card::before {
+      pointer-events: none;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border-radius: 28px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 4.2vw, 2.9rem);
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 860px;
+      line-height: 1.5;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-start;
+      justify-content: flex-end;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+
+    .panel-inner {
+      padding: 18px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 16px;
+      align-self: start;
+    }
+
+    .sidebar-header,
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    h2, h3 {
+      margin: 0 0 6px;
+      letter-spacing: -0.03em;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .jobs {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+      max-height: calc(100vh - 290px);
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .job {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      border-radius: 18px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .job.active {
+      border-color: rgba(215,181,109,0.42);
+      background: linear-gradient(180deg, rgba(215,181,109,0.10), rgba(255,255,255,0.04));
+    }
+
+    .job-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .job-title {
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .job-meta {
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .job-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .content {
+      display: grid;
+      gap: 18px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn.active {
+      border-color: rgba(215,181,109,0.42);
+      background: linear-gradient(180deg, rgba(215,181,109,0.18), rgba(215,181,109,0.10));
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--label);
+      font-size: 0.94rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .span-12 { grid-column: span 12; }
+    .span-8 { grid-column: span 8; }
+    .span-6 { grid-column: span 6; }
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.86rem;
+      color: var(--label);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .std-chip { color: var(--std); border-color: color-mix(in srgb, var(--std) 35%, var(--line)); }
+    .half-chip { color: var(--half); border-color: color-mix(in srgb, var(--half) 35%, var(--line)); }
+    .double-chip { color: var(--double); border-color: color-mix(in srgb, var(--double) 35%, var(--line)); }
+    .office-chip { color: var(--office); border-color: color-mix(in srgb, var(--office) 35%, var(--line)); }
+
+    .days {
+      display: grid;
+      gap: 14px;
+    }
+
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: 20px;
+      padding: 20px;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .day-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      overflow: hidden;
+    }
+
+    .day-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .day-head-left {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .day-badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      background: rgba(255,255,255,0.04);
+      color: var(--label);
+    }
+
+    .day-body {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .summary-mini {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 6px;
+    }
+
+    .metric .value {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      background: rgba(255,255,255,0.05);
+      color: var(--label);
+      font-size: 0.86rem;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .money {
+      display: grid;
+      gap: 12px;
+    }
+
+    .money-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      padding: 13px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .money-line .name {
+      color: var(--label);
+    }
+
+    .money-line .amt {
+      font-weight: 800;
+    }
+
+    .subpanel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      padding: 14px;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+      padding: 6px 6px 10px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .file-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+      position: relative;
+      z-index: 5;
+      pointer-events: auto;
+      touch-action: manipulation;
+    }
+
+    .file-label:hover {
+      transform: translateY(-1px);
+      background: var(--panel-2);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    @media (max-width: 1120px) {
+      .main-grid,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .jobs {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 820px) {
+      body {
+        padding: 12px;
+      }
+
+      .hero,
+      .panel-inner,
+      .day-head,
+      .day-body {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .field-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .span-8,
+      .span-6,
+      .span-4,
+      .span-3,
+      .span-2 {
+        grid-column: span 6;
+      }
+
+      .summary-mini {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+
+      html, body {
+        background: #fff !important;
+        color: #111 !important;
+      }
+
+      body {
+        padding: 0 !important;
+      }
+
+      .hero,
+      .sidebar,
+      .screen-only,
+      .footer,
+      .no-print {
+        display: none !important;
+      }
+
+      .print-only {
+        display: block !important;
+      }
+
+      .print-page {
+        width: 100%;
+        min-height: 0;
+        page-break-after: always;
+        break-after: page;
+        color: #111;
+        background: #fff;
+        padding-top: 2mm;
+      }
+
+      .print-page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .print-page.page-2.compact {
+        min-height: 0;
+      }
+
+      .print-grid-top {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 0.32fr;
+        gap: 24px;
+        align-items: start;
+        margin-bottom: 18px;
+      }
+
+      .print-label,
+      .print-value {
+        font-weight: 400;
+      }
+
+      .print-block p {
+        margin: 0 0 4px;
+        line-height: 1.35;
+        font-size: 10.5pt;
+      }
+
+      .print-page-num {
+        text-align: right;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .print-table,
+      .print-money-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .print-table {
+        font-size: 10pt;
+      }
+
+      .print-money-table {
+        font-size: 10.25pt;
+        margin-bottom: 28px;
+      }
+
+      .print-table thead th,
+      .print-money-table thead th {
+        background: #f7f7f7 !important;
+        border: none !important;
+        border-top: 1px solid #888;
+        border-bottom: 1px solid #cfcfcf;
+        padding: 9px 6px 8px;
+        color: #111 !important;
+        font-weight: 500;
+        text-align: left;
+      }
+
+      .print-table td,
+      .print-money-table td {
+        border: none !important;
+        border-bottom: 1px solid #ececec !important;
+        padding: 7px 6px;
+        vertical-align: top;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .print-table tbody tr,
+      .print-money-table tbody tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .print-table tbody tr:last-child td,
+      .print-money-table tbody tr:last-child td {
+        border-bottom: none !important;
+      }
+
+      .print-table td small,
+      .print-money-table td small {
+        display: block;
+        margin-top: 4px;
+        color: #444;
+        line-height: 1.25;
+        font-size: 8.9pt;
+      }
+
+      .print-numeric {
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .print-center {
+        text-align: center;
+      }
+
+      .print-notes {
+        line-height: 1.28;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      .print-table .notes-cell,
+      .print-money-table .notes-cell,
+      .print-table .expense-cell,
+      .print-money-table .expense-cell {
+        font-size: 9.2pt;
+      }
+
+      .print-table.timesheet th:nth-child(1) { width: 8%; }
+      .print-table.timesheet th:nth-child(2),
+      .print-table.timesheet th:nth-child(3),
+      .print-table.timesheet th:nth-child(4),
+      .print-table.timesheet th:nth-child(5),
+      .print-table.timesheet th:nth-child(6),
+      .print-table.timesheet th:nth-child(7) { width: 8.5%; }
+      .print-table.timesheet th:nth-child(8),
+      .print-table.timesheet th:nth-child(9) { width: 5.5%; }
+      .print-table.timesheet th:nth-child(10) { width: 24%; }
+      .print-table.timesheet th:nth-child(11) { width: 8%; }
+
+      .print-grid-page2-top {
+        display: grid;
+        grid-template-columns: 1fr 1fr 0.32fr;
+        gap: 28px;
+        margin-bottom: 20px;
+        align-items: start;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .print-page2-box p {
+        margin: 0 0 5px;
+        line-height: 1.35;
+        font-size: 10.5pt;
+      }
+
+      .print-page2-box .gap {
+        margin-top: 14px;
+      }
+
+      .print-page2-title {
+        font-size: 10pt;
+        margin-bottom: 8px;
+        letter-spacing: 0.02em;
+      }
+
+      .print-page2-name {
+        font-weight: 500;
+        margin-top: 2px;
+        margin-bottom: 2px;
+      }
+
+      .print-bank-row {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 10px;
+      }
+
+      .print-totals {
+        margin-top: 22px;
+        border-top: 1px solid #999;
+        padding-top: 12px;
+        display: grid;
+        grid-template-columns: 1.35fr 0.9fr;
+        gap: 24px;
+        align-items: start;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .print-totals-left {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        font-size: 9.75pt;
+      }
+
+      .print-breakdown-cell {
+        min-width: 0;
+      }
+
+      .print-breakdown-label {
+        margin-bottom: 4px;
+        color: #555;
+        font-size: 9pt;
+      }
+
+      .print-breakdown-value {
+        line-height: 1.3;
+      }
+
+      .print-totals-right {
+        font-size: 10.5pt;
+      }
+
+      .print-total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .print-grand-total {
+        border-top: 1px solid #111;
+        padding-top: 8px;
+        margin-top: 8px;
+      }
+
+      .print-total-row strong {
+        font-weight: 700;
+      }
+
+      .print-faint {
+        color: #111;
+      }
+
+      .print-page2-box,
+      .print-table-wrap,
+      .print-money-wrap {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .print-money-table {
+        table-layout: fixed;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero screen-only">
+      <div>
+        <h1>Production Invoice Tool</h1>
+        <p>
+          Multi-job invoice and timesheet app with local autosave, JSON export, dark and light modes,
+          print-ready PDF output, and a clean client-facing print layout. 
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="primary" data-action="new-job">+ New Job</button>
+        <button data-action="duplicate-job">Duplicate Job</button>
+        <button data-action="toggle-theme">Dark / Light</button>
+        <button data-action="export-pdf">Export PDF</button>
+      </div>
+    </header>
+
+    <div class="main-grid screen-only">
+      <aside class="panel sidebar">
+        <div class="panel-inner">
+          <div class="sidebar-header">
+            <div>
+              <h2>Jobs</h2>
+              <div class="muted" id="jobsCount">0 jobs</div>
+            </div>
+            <button class="small primary" data-action="new-job">Add Job</button>
+          </div>
+
+          <div class="jobs" id="jobsList"></div>
+
+          <div style="height:14px;"></div>
+
+          <div class="subpanel">
+            <h3>Data</h3>
+            <div class="muted" style="margin-bottom:12px;">
+              Every change auto-saves in this browser. Export JSON for backups.
+            </div>
+            <div class="toolbar">
+              <button data-action="export-current-json">Export Current JSON</button>
+              <label class="file-label" for="importJson">Import Job JSON</label>
+              <input id="importJson" class="hidden" type="file" accept=".json,application/json" />
+              <button class="danger" data-action="reset-current">Reset Current</button>
+              <button class="danger" data-action="reset-all">Reset All</button>
+              <button class="danger" data-action="backup-all">Backup All Jobs</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="panel">
+          <div class="panel-inner">
+            <div class="section-header">
+              <div>
+                <h2 id="currentJobTitle">No job selected</h2>
+                <div class="muted" id="currentJobMeta">Create a job to begin.</div>
+              </div>
+              <div class="tabs">
+                <button class="tab-btn active" data-action="switch-tab" data-tab="timings">Page 1, Timings</button>
+                <button class="tab-btn" data-action="switch-tab" data-tab="summary">Page 2, Summary</button>
+                <button class="tab-btn" data-action="switch-tab" data-tab="settings">Rates</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-timings">
+          <div class="panel">
+            <div class="panel-inner">
+              <div class="section-header">
+                <div>
+                  <h2>Job Information</h2>
+                  <div class="muted">Invoice, client, mileage, and fixed TO / FROM print fields.</div>
+                </div>
+              </div>
+
+              <div class="field-grid">
+                <div class="field span-6">
+                  <label for="jobTitle">Job Title</label>
+                  <input id="jobTitle" placeholder="Job Name" />
+                </div>
+                <div class="field span-3">
+                  <label for="invoiceDate">Invoice Date</label>
+                  <input id="invoiceDate" type="date" />
+                </div>
+                <div class="field span-3">
+                  <label for="invoiceNumber">Invoice Number</label>
+                  <input id="invoiceNumber" placeholder="INV-001" />
+                </div>
+
+                <div class="field span-6">
+                  <label for="productionCompany">Production Co</label>
+                  <input id="productionCompany" placeholder="Company Name" />
+                </div>
+                <div class="field span-6">
+                  <label for="vehicleName">Vehicle Plate</label>
+                  <select id="vehicleName">
+                    <option value="">Select vehicle plate</option>
+                    <option value="UFO">UFO</option>
+                    <option value="EXK">EXK</option>
+                    <option value="TWE">TWE</option>
+                    <option value="FBD">FBD</option>
+                  </select>
+                </div>
+
+                <div class="field span-4">
+                  <label for="jobMileageStart">Start Mileage</label>
+                  <input id="jobMileageStart" type="number" step="0.1" placeholder="Start Mileage" />
+                </div>
+                <div class="field span-4">
+                  <label for="jobMileageEnd">End Mileage</label>
+                  <input id="jobMileageEnd" type="number" step="0.1" placeholder="End Mileage" />
+                </div>
+                <div class="field span-4">
+                  <label>Total Mileage</label>
+                  <input id="jobMileageTotal" disabled />
+                </div>
+
+                <div class="field span-6">
+                  <label for="toName">TO Name / Company</label>
+                  <input id="toName" placeholder="TO Name / Company" />
+                </div>
+                <div class="field span-6">
+                  <label for="yourName">Your Name</label>
+                  <input id="yourName" placeholder="Your Name" />
+                </div>
+
+                <div class="field span-6">
+                  <label for="toAddress">TO Address</label>
+                  <textarea id="toAddress" placeholder="TO Address"></textarea>
+                </div>
+                <div class="field span-6">
+                  <label for="yourAddress">Your Address</label>
+                  <textarea id="yourAddress" placeholder="Your Address"></textarea>
+                </div>
+
+                <div class="field span-3">
+                  <label for="yourSortCode">Your Sort Code</label>
+                  <input id="yourSortCode" placeholder="Your Sort Code" />
+                </div>
+                <div class="field span-3">
+                  <label for="yourBankAccount">Your Bank Account</label>
+                  <input id="yourBankAccount" placeholder="Your Bank Account" />
+                </div>
+                <div class="field span-3">
+                  <label for="clientRef">Client Ref / PO</label>
+                  <input id="clientRef" placeholder="Optional" />
+                </div>
+                <div class="field span-3">
+                  <label for="generalNotes">General Notes</label>
+                  <input id="generalNotes" placeholder="Optional" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-inner">
+              <div class="section-header">
+                <div>
+                  <h2>Day Entries</h2>
+                  <div class="muted">Add production, collection, return, or office days.</div>
+                </div>
+                <div class="toolbar">
+                  <button class="primary" data-action="add-day" data-type="production">+ Production Day</button>
+                  <button data-action="add-day" data-type="collection">+ Collection Day</button>
+                  <button data-action="add-day" data-type="return">+ Return Day</button>
+                  <button data-action="add-day" data-type="office">+ Office Day</button>
+                </div>
+              </div>
+
+              <div class="days" id="daysList"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-summary" class="hidden">
+          <div class="panel">
+            <div class="panel-inner">
+              <div class="section-header">
+                <div>
+                  <h2>Page 2 Summary</h2>
+                  <div class="muted">Daily hour splits, expenses, totals, and invoice value.</div>
+                </div>
+                <div class="chips">
+                  <span class="chip std-chip">Standard</span>
+                  <span class="chip half-chip">Time + Half</span>
+                  <span class="chip double-chip">Double Time</span>
+                  <span class="chip office-chip">Office</span>
+                </div>
+              </div>
+
+              <div class="summary-grid">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Total Hours</th>
+                        <th>Standard</th>
+                        <th>Time + Half</th>
+                        <th>Double</th>
+                        <th>Office</th>
+                        <th>C/C</th>
+                        <th>ULEZ</th>
+                        <th>Notes</th>
+                        <th>Expenses</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody id="summaryBody"></tbody>
+                  </table>
+                </div>
+
+                <div class="money">
+                  <div class="money-line">
+                    <div class="name">Total days</div>
+                    <div class="amt" id="sumDays">0</div>
+                  </div>
+                  <div class="money-line">
+                    <div class="name">Total hours</div>
+                    <div class="amt" id="sumHours">0.00</div>
+                  </div>
+                  <div class="money-line">
+                    <div class="name">Total mileage</div>
+                    <div class="amt" id="sumMileage">0.0</div>
+                  </div>
+                  <div class="money-line">
+                    <div class="name">Standard hours</div>
+                    <div class="amt" id="sumStd">0.00</div>
+                  </div>
+                  <div class="money-line">
+                    <div class="name">Time + Half hours</div>
+                    <div class="amt" id="sumHalf">0.00</div>
+                  </div>
+                  <div class="money-line">
+                    <div class="name">Double hours</div>
+                    <div class="amt" id="sumDouble">0.00</div>
+                  </div>
+                  <div class="money-line">
+                    <div class="name">Office hours</div>
+                    <div class="amt" id="sumOffice">0.00</div>
+                  </div>
+                  <div class="money-line">
+                    <div class="name">Expenses total</div>
+                    <div class="amt" id="sumExpenses">£0.00</div>
+                  </div>
+                  <div class="money-line">
+                    <div class="name">Invoice total</div>
+                    <div class="amt" id="sumValue">£0.00</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-settings" class="hidden">
+          <div class="panel">
+            <div class="panel-inner">
+              <div class="section-header">
+                <div>
+                  <h2>Rates and Rules</h2>
+                  <div class="muted">Internal only. Hidden from client-friendly print layout.</div>
+                </div>
+              </div>
+
+              <div class="chips" style="margin-bottom:14px;">
+                <span class="chip std-chip">First 8h standard</span>
+                <span class="chip half-chip">8h to 16h time + half</span>
+                <span class="chip double-chip">16h+ double</span>
+                <span class="chip double-chip">Sunday double all day</span>
+                <span class="chip half-chip">After 8pm time + half (non-Sunday)</span>
+                <span class="chip office-chip">Office day own rate</span>
+              </div>
+
+              <div class="field-grid">
+                <div class="field span-3">
+                  <label for="rateStandard">Standard Rate (£)</label>
+                  <input id="rateStandard" type="number" step="0.01" />
+                </div>
+                <div class="field span-3">
+                  <label for="rateHalf">Time + Half Rate (£)</label>
+                  <input id="rateHalf" type="number" step="0.01" />
+                </div>
+                <div class="field span-3">
+                  <label for="rateDouble">Double Rate (£)</label>
+                  <input id="rateDouble" type="number" step="0.01" />
+                </div>
+                <div class="field span-3">
+                  <label for="rateOffice">Office Rate (£)</label>
+                  <input id="rateOffice" type="number" step="0.01" />
+                </div>
+
+                <div class="field span-3">
+                  <label for="thresholdStandard">Standard Threshold</label>
+                  <input id="thresholdStandard" type="number" step="0.25" />
+                </div>
+                <div class="field span-3">
+                  <label for="thresholdHalf">Half Threshold</label>
+                  <input id="thresholdHalf" type="number" step="0.25" />
+                </div>
+                <div class="field span-3">
+                  <label for="calcMode">Calculation Mode</label>
+                  <select id="calcMode">
+                    <option value="start_to_return">Start to RTB</option>
+                    <option value="call_to_wrap">Call to Wrap</option>
+                  </select>
+                </div>
+                <div class="field span-3">
+                  <label for="sundayDouble">Sunday Double</label>
+                  <select id="sundayDouble">
+                    <option value="true">Enabled</option>
+                    <option value="false">Disabled</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer screen-only">
+          © <span id="year"></span>. Production Invoice Tool.
+        </footer>
+      </main>
+    </div>
+
+    <section class="print-only" id="printRoot"></section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "invoice_tool_full_v1";
+    const THEME_KEY = "invoice_tool_theme_v1";
+
+    const DEFAULT_SETTINGS = {
+      standardRate: 16,
+      halfRate: 24,
+      doubleRate: 32,
+      officeRate: 20,
+      standardThreshold: 8,
+      halfThreshold: 16,
+      calcMode: "start_to_return",
+      sundayDouble: true
+    };
+
+    function uid() {
+      return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : "id_" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function todayISO() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function blankDay(type = "production") {
+      const base = {
+        id: uid(),
+        type,
+        date: todayISO(),
+        startTime: "",
+        arriveTime: "",
+        arrivePostcode: "",
+        callTime: "",
+        wrapTime: "",
+        wrapPostcode: "",
+        leaveTime: "",
+        returnTime: "",
+        finishTime: "",
+        officeHours: "",
+        minCharge4h: false,
+        minCharge8h: false,
+        nightShoot: false,
+        restDayCharge: false,
+        cCharge: false,
+        ulez: false,
+        expenseAmount: "",
+        expenseNotes: "",
+        notes: "",
+        tasksDone: ""
+      };
+
+      if (type === "production") {
+        base.startTime = "06:00";
+        base.arriveTime = "07:00";
+        base.callTime = "08:00";
+        base.wrapTime = "17:00";
+        base.leaveTime = "18:00";
+        base.returnTime = "20:00";
+      } else if (type === "collection" || type === "return") {
+        base.startTime = "06:00";
+        base.returnTime = "20:00";
+      } else if (type === "office") {
+        base.startTime = "09:00";
+        base.finishTime = "17:00";
+        base.officeHours = "8";
+      }
+
+      return base;
+    }
+
+    function defaultJob() {
+      return {
+        id: uid(),
+        title: "Untitled Job",
+        invoiceDate: todayISO(),
+        invoiceNumber: "",
+        productionCompany: "",
+        vehicleName: "",
+        jobMileageStart: "",
+        jobMileageEnd: "",
+        toName: "Client Name",
+        toAddress: "Client Address",
+        yourName: "Your Name",
+        yourAddress: "Your Address",
+        yourSortCode: "Your Sort Code",
+        yourBankAccount: "Your Bank Account",
+        clientRef: "",
+        generalNotes: "",
+        settings: clone(DEFAULT_SETTINGS),
+        days: []
+      };
+    }
+
+    const state = {
+      jobs: [],
+      activeJobId: null,
+      tab: "timings"
+    };
+
+    const refs = {
+      jobsList: document.getElementById("jobsList"),
+      jobsCount: document.getElementById("jobsCount"),
+      currentJobTitle: document.getElementById("currentJobTitle"),
+      currentJobMeta: document.getElementById("currentJobMeta"),
+      year: document.getElementById("year"),
+      daysList: document.getElementById("daysList"),
+      summaryBody: document.getElementById("summaryBody"),
+      printRoot: document.getElementById("printRoot"),
+
+      tabTimings: document.getElementById("tab-timings"),
+      tabSummary: document.getElementById("tab-summary"),
+      tabSettings: document.getElementById("tab-settings"),
+
+      jobTitle: document.getElementById("jobTitle"),
+      invoiceDate: document.getElementById("invoiceDate"),
+      invoiceNumber: document.getElementById("invoiceNumber"),
+      productionCompany: document.getElementById("productionCompany"),
+      vehicleName: document.getElementById("vehicleName"),
+      jobMileageStart: document.getElementById("jobMileageStart"),
+      jobMileageEnd: document.getElementById("jobMileageEnd"),
+      jobMileageTotal: document.getElementById("jobMileageTotal"),
+      toName: document.getElementById("toName"),
+      toAddress: document.getElementById("toAddress"),
+      yourName: document.getElementById("yourName"),
+      yourAddress: document.getElementById("yourAddress"),
+      yourSortCode: document.getElementById("yourSortCode"),
+      yourBankAccount: document.getElementById("yourBankAccount"),
+      clientRef: document.getElementById("clientRef"),
+      generalNotes: document.getElementById("generalNotes"),
+
+      rateStandard: document.getElementById("rateStandard"),
+      rateHalf: document.getElementById("rateHalf"),
+      rateDouble: document.getElementById("rateDouble"),
+      rateOffice: document.getElementById("rateOffice"),
+      thresholdStandard: document.getElementById("thresholdStandard"),
+      thresholdHalf: document.getElementById("thresholdHalf"),
+      calcMode: document.getElementById("calcMode"),
+      sundayDouble: document.getElementById("sundayDouble"),
+
+      sumDays: document.getElementById("sumDays"),
+      sumHours: document.getElementById("sumHours"),
+      sumMileage: document.getElementById("sumMileage"),
+      sumStd: document.getElementById("sumStd"),
+      sumHalf: document.getElementById("sumHalf"),
+      sumDouble: document.getElementById("sumDouble"),
+      sumOffice: document.getElementById("sumOffice"),
+      sumExpenses: document.getElementById("sumExpenses"),
+      sumValue: document.getElementById("sumValue")
+    };
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem(THEME_KEY, theme);
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY) || "dark";
+      applyTheme(saved);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(current === "dark" ? "light" : "dark");
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        const job = defaultJob();
+        state.jobs = [job];
+        state.activeJobId = job.id;
+        saveState();
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        state.jobs = Array.isArray(parsed.jobs) ? parsed.jobs.map(normalizeJob) : [];
+        state.activeJobId = parsed.activeJobId || null;
+        state.tab = parsed.tab || "timings";
+
+        if (!state.jobs.length) {
+          const job = defaultJob();
+          state.jobs = [job];
+          state.activeJobId = job.id;
+        }
+
+        if (!state.jobs.some(j => j.id === state.activeJobId)) {
+          state.activeJobId = state.jobs[0].id;
+        }
+      } catch {
+        const job = defaultJob();
+        state.jobs = [job];
+        state.activeJobId = job.id;
+      }
+    }
+
+    function normalizeJob(job) {
+      const fresh = defaultJob();
+      return {
+        ...fresh,
+        ...job,
+        settings: { ...DEFAULT_SETTINGS, ...(job.settings || {}) },
+        days: Array.isArray(job.days) ? job.days.map(d => ({ ...blankDay(d.type || "production"), ...d })) : []
+      };
+    }
+
+    function activeJob() {
+      return state.jobs.find(j => j.id === state.activeJobId) || null;
+    }
+
+    function ensureAtLeastOneJob() {
+      if (!state.jobs.length) {
+        const job = defaultJob();
+        state.jobs = [job];
+        state.activeJobId = job.id;
+      }
+    }
+
+    function createJob() {
+      const job = defaultJob();
+      job.title = `New Job ${state.jobs.length + 1}`;
+      state.jobs.unshift(job);
+      state.activeJobId = job.id;
+      saveState();
+      renderAll();
+    }
+
+    function duplicateJob() {
+      const job = activeJob();
+      if (!job) return;
+      const copy = clone(job);
+      copy.id = uid();
+      copy.title = `${job.title || "Untitled Job"} Copy`;
+      copy.days = copy.days.map(day => ({ ...day, id: uid() }));
+      state.jobs.unshift(copy);
+      state.activeJobId = copy.id;
+      saveState();
+      renderAll();
+    }
+
+    function removeJob(jobId) {
+      const job = state.jobs.find(j => j.id === jobId);
+      if (!job) return;
+      if (!confirm(`Delete "${job.title}"?`)) return;
+      state.jobs = state.jobs.filter(j => j.id !== jobId);
+      ensureAtLeastOneJob();
+      if (!state.jobs.some(j => j.id === state.activeJobId)) {
+        state.activeJobId = state.jobs[0].id;
+      }
+      saveState();
+      renderAll();
+    }
+
+    function resetCurrentJob() {
+      const job = activeJob();
+      if (!job) return;
+      if (!confirm("Reset the current job?")) return;
+      const replacement = defaultJob();
+      replacement.id = job.id;
+      const idx = state.jobs.findIndex(j => j.id === job.id);
+      state.jobs[idx] = replacement;
+      saveState();
+      renderAll();
+    }
+
+    function resetAllJobs() {
+      if (!confirm("Reset all jobs? This clears everything in the app.")) return;
+      const job = defaultJob();
+      state.jobs = [job];
+      state.activeJobId = job.id;
+      state.tab = "timings";
+      saveState();
+      renderAll();
+    }
+
+    function exportCurrentJSON() {
+      const job = activeJob();
+      if (!job) return;
+      exportSingleJob(job);
+    }
+
+    function exportSingleJob(job) {
+      if (!job) return;
+      downloadBlob(new Blob([JSON.stringify(job, null, 2)], { type: "application/json" }), safeFileName(job.title) + ".json");
+    }
+
+    function backupAllJobs() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        jobs: state.jobs
+      };
+      downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), `invoice-backup-${todayISO()}.json`);
+    }
+
+    function importJob(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          const importedJobs = extractJobsFromImport(parsed).map(job => {
+            const normalized = normalizeJob(job);
+            normalized.id = uid();
+            normalized.days = normalized.days.map(d => ({ ...d, id: uid() }));
+            return normalized;
+          });
+
+          if (!importedJobs.length) throw new Error("No jobs found");
+
+          state.jobs = [...importedJobs.reverse(), ...state.jobs];
+          state.activeJobId = importedJobs[0].id;
+          saveState();
+          renderAll();
+
+          alert(importedJobs.length === 1 ? "1 job imported." : `${importedJobs.length} jobs imported.`);
+        } catch {
+          alert("Could not import that JSON file.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function extractJobsFromImport(parsed) {
+      const results = [];
+      const seen = new WeakSet();
+
+      function visit(node) {
+        if (!node || typeof node !== "object") return;
+        if (seen.has(node)) return;
+        seen.add(node);
+
+        if (Array.isArray(node)) {
+          node.forEach(visit);
+          return;
+        }
+
+        if (Array.isArray(node.days)) {
+          results.push(node);
+          return;
+        }
+
+        if (Array.isArray(node.jobs)) {
+          node.jobs.forEach(visit);
+        }
+      }
+
+      visit(parsed);
+
+      return results.filter((job, index) => {
+        if (!job || !Array.isArray(job.days)) return false;
+        return results.indexOf(job) === index;
+      });
+    }
+
+    function safeFileName(name) {
+      return (name || "job").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "job";
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+    }
+
+    function switchTab(tab) {
+      state.tab = tab;
+      saveState();
+      renderTabs();
+    }
+
+    function setActiveJob(jobId) {
+      state.activeJobId = jobId;
+      saveState();
+      renderAll();
+    }
+
+    function addDay(type) {
+      const job = activeJob();
+      if (!job) return;
+      const day = blankDay(type);
+      if (job.days.length) {
+        day.date = nextDate(job.days[job.days.length - 1].date || todayISO());
+      }
+      job.days.push(day);
+      saveState();
+      renderAll();
+    }
+
+    function nextDate(iso) {
+      const d = new Date(iso + "T00:00:00");
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function updateJobField(key, value) {
+      const job = activeJob();
+      if (!job) return;
+      job[key] = value;
+      saveState();
+      renderHeader();
+      renderJobs();
+      renderSummary();
+      renderPrint();
+    }
+
+    function updateSetting(key, value) {
+      const job = activeJob();
+      if (!job) return;
+      job.settings[key] = value;
+      saveState();
+      renderDays();
+      renderSummary();
+      renderPrint();
+    }
+
+    function updateDay(dayId, key, value, options = {}) {
+      const job = activeJob();
+      if (!job) return;
+      const day = job.days.find(d => d.id === dayId);
+      if (!day) return;
+      day[key] = value;
+      saveState();
+      if (options.rerenderDays) renderDays();
+      else updateDayMetrics(dayId);
+      renderSummary();
+      renderPrint();
+    }
+
+    function updateDayMetrics(dayId) {
+      const job = activeJob();
+      if (!job) return;
+      const day = job.days.find(d => d.id === dayId);
+      if (!day) return;
+      const card = document.querySelector(`.day-card [data-day-id="${dayId}"]`)?.closest('.day-card');
+      if (!card) return;
+      const calc = calculateDay(job, day);
+      const totalNode = card.querySelector('[data-metric="total"]');
+      const stdNode = card.querySelector('[data-metric="standard"]');
+      const halfNode = card.querySelector('[data-metric="half"]');
+      const otherNode = card.querySelector('[data-metric="other"]');
+      const expenseNode = card.querySelector('[data-metric="expenses"]');
+      if (totalNode) totalNode.textContent = hrs(calc.totalHours);
+      if (stdNode) stdNode.textContent = hrs(calc.standardHours);
+      if (halfNode) halfNode.textContent = hrs(calc.halfHours);
+      if (otherNode) otherNode.textContent = hrs(calc.doubleHours + calc.officeHours);
+      if (expenseNode) expenseNode.textContent = money(calc.expenseValue);
+    }
+
+    function switchDayType(dayId, type) {
+      const job = activeJob();
+      if (!job) return;
+      const idx = job.days.findIndex(d => d.id === dayId);
+      if (idx < 0) return;
+      const old = job.days[idx];
+      const replacement = blankDay(type);
+      replacement.id = old.id;
+      replacement.date = old.date;
+      replacement.cCharge = old.cCharge;
+      replacement.ulez = type === "office" ? false : old.ulez;
+      replacement.nightShoot = type === "production" ? !!old.nightShoot : false;
+      replacement.restDayCharge = type === "production" ? !!old.restDayCharge : false;
+      replacement.notes = old.notes;
+      replacement.tasksDone = old.tasksDone || "";
+      replacement.expenseAmount = old.expenseAmount || "";
+      replacement.expenseNotes = old.expenseNotes || "";
+      job.days[idx] = replacement;
+      saveState();
+      renderDays();
+      renderSummary();
+      renderPrint();
+    }
+
+    function moveDay(dayId, dir) {
+      const job = activeJob();
+      if (!job) return;
+      const idx = job.days.findIndex(d => d.id === dayId);
+      const target = idx + dir;
+      if (idx < 0 || target < 0 || target >= job.days.length) return;
+      [job.days[idx], job.days[target]] = [job.days[target], job.days[idx]];
+      saveState();
+      renderDays();
+      renderSummary();
+      renderPrint();
+    }
+
+    function deleteDay(dayId) {
+      const job = activeJob();
+      if (!job) return;
+      job.days = job.days.filter(d => d.id !== dayId);
+      saveState();
+      renderAll();
+    }
+
+    function dayTypeLabel(type) {
+      return {
+        production: "Production Day",
+        collection: "Collection Day",
+        return: "Return Day",
+        office: "Office Day"
+      }[type] || "Day";
+    }
+
+    function formatDatePretty(iso) {
+      if (!iso) return "";
+      const d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short"
+      });
+    }
+
+    function formatDateLong(iso) {
+      if (!iso) return "";
+      const d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "2-digit"
+      });
+    }
+
+    function formatDay(iso) {
+      if (!iso) return "";
+      const d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("en-GB", { weekday: "long" });
+    }
+
+    function isSunday(iso) {
+      return new Date(iso + "T00:00:00").getDay() === 0;
+    }
+
+    function timeDiffHours(start, end) {
+      if (!start || !end) return 0;
+      const [sh, sm] = String(start).split(":").map(Number);
+      const [eh, em] = String(end).split(":").map(Number);
+      if ([sh, sm, eh, em].some(v => Number.isNaN(v))) return 0;
+      let s = sh * 60 + sm;
+      let e = eh * 60 + em;
+      if (e < s) e += 24 * 60;
+      return Math.max(0, (e - s) / 60);
+    }
+
+    function getDayChargeWindow(job, day) {
+      if (day.type === "office") {
+        return {
+          start: day.startTime,
+          end: day.finishTime || day.returnTime || ""
+        };
+      }
+
+      if (day.type === "production" && day.nightShoot) {
+        return {
+          start: day.startTime,
+          end: day.returnTime
+        };
+      }
+
+      if (job.settings.calcMode === "call_to_wrap") {
+        return {
+          start: day.callTime,
+          end: day.wrapTime
+        };
+      }
+
+      return {
+        start: day.startTime,
+        end: day.returnTime
+      };
+    }
+
+    function afterEightPmHours(start, end) {
+      if (!start || !end) return 0;
+      const [sh, sm] = String(start).split(":").map(Number);
+      const [eh, em] = String(end).split(":").map(Number);
+      if ([sh, sm, eh, em].some(v => Number.isNaN(v))) return 0;
+
+      let s = sh * 60 + sm;
+      let e = eh * 60 + em;
+      if (e < s) e += 24 * 60;
+
+      const eightPm = 20 * 60;
+      const overlap = Math.max(0, e - Math.max(s, eightPm));
+      return overlap / 60;
+    }
+
+    function calculateDay(job, day) {
+      const chargeWindow = getDayChargeWindow(job, day);
+      const expenseValue = Number(day.expenseAmount || 0);
+      const restDayChargeHours = (day.type === "production" && day.restDayCharge) ? 8 : 0;
+      let actualHours = 0;
+
+      if (day.type === "office") {
+        if ((chargeWindow.start || "") && (chargeWindow.end || "")) {
+          actualHours = timeDiffHours(chargeWindow.start, chargeWindow.end);
+        } else {
+          actualHours = Number(day.officeHours || 0);
+        }
+      } else {
+        actualHours = timeDiffHours(chargeWindow.start, chargeWindow.end);
+      }
+
+      let baseHours = actualHours;
+
+      if (day.type === "collection" && day.minCharge4h) {
+        baseHours = Math.max(baseHours, 4);
+      }
+      if (day.type === "production" && day.minCharge8h) {
+        baseHours = Math.max(baseHours, 8);
+      }
+
+      let standardHours = 0;
+      let halfHours = 0;
+      let doubleHours = 0;
+      let officeHours = 0;
+      let labourValue = 0;
+
+      if (day.type === "office") {
+        officeHours = baseHours;
+      } else if (day.type === "production" && day.nightShoot) {
+        doubleHours = baseHours;
+      } else if (job.settings.sundayDouble && isSunday(day.date)) {
+        doubleHours = baseHours;
+      } else if (day.type === "production" && day.minCharge8h && actualHours < 8) {
+        standardHours = 8;
+      } else {
+        const s = Number(job.settings.standardThreshold || 8);
+        const h = Number(job.settings.halfThreshold || 16);
+        const halfBlockCap = Math.max(h - s, 0);
+
+        let standardCap = s;
+
+        if (chargeWindow.start && chargeWindow.end) {
+          const [sh, sm] = String(chargeWindow.start).split(":").map(Number);
+          const [eh, em] = String(chargeWindow.end).split(":").map(Number);
+
+          if (![sh, sm, eh, em].some(v => Number.isNaN(v))) {
+            let startMinutes = sh * 60 + sm;
+            let endMinutes = eh * 60 + em;
+
+            if (endMinutes < startMinutes) {
+              endMinutes += 24 * 60;
+            }
+
+            const eightPm = 20 * 60;
+            const preEightPmHours = Math.max(0, Math.min(endMinutes, eightPm) - startMinutes) / 60;
+            standardCap = Math.min(s, preEightPmHours);
+          }
+        }
+
+        standardHours = Math.min(baseHours, standardCap);
+        const remainingAfterStandard = Math.max(baseHours - standardHours, 0);
+        halfHours = Math.min(remainingAfterStandard, halfBlockCap);
+        doubleHours = Math.max(remainingAfterStandard - halfBlockCap, 0);
+      }
+
+      if (restDayChargeHours) {
+        standardHours += restDayChargeHours;
+      }
+
+      labourValue =
+        standardHours * Number(job.settings.standardRate || 0) +
+        halfHours * Number(job.settings.halfRate || 0) +
+        doubleHours * Number(job.settings.doubleRate || 0) +
+        officeHours * Number(job.settings.officeRate || 0);
+
+      return {
+        actualHours,
+        baseHours,
+        restDayChargeHours,
+        totalHours: baseHours + restDayChargeHours,
+        standardHours,
+        halfHours,
+        doubleHours,
+        officeHours,
+        labourValue,
+        expenseValue,
+        value: labourValue + expenseValue
+      };
+    }
+
+    function jobMileage(job) {
+      const start = Number(job.jobMileageStart || 0);
+      const end = Number(job.jobMileageEnd || 0);
+      return Math.max(0, (Number.isFinite(end - start) ? end - start : 0));
+    }
+
+    function money(n) {
+      return new Intl.NumberFormat("en-GB", {
+        style: "currency",
+        currency: "GBP"
+      }).format(Number(n || 0));
+    }
+
+    function hrs(n) {
+      const totalMinutes = Math.round(Number(n || 0) * 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = Math.abs(totalMinutes % 60);
+      return `${hours}.${String(minutes).padStart(2, "0")}`;
+    }
+
+    function esc(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function renderJobs() {
+      refs.jobsCount.textContent = `${state.jobs.length} job${state.jobs.length === 1 ? "" : "s"}`;
+      refs.jobsList.innerHTML = state.jobs.map(job => {
+        const active = job.id === state.activeJobId ? " active" : "";
+        return `
+          <div class="job${active}">
+            <div class="job-head">
+              <div>
+                <div class="job-title">${esc(job.title || "Untitled Job")}</div>
+                <div class="job-meta">
+                  ${esc(job.productionCompany || "No production company")}<br>
+                  ${job.days.length} day${job.days.length === 1 ? "" : "s"}
+                </div>
+              </div>
+            </div>
+            <div class="job-actions">
+              <button class="small" data-action="select-job" data-id="${job.id}">Open</button>
+              <button class="small" data-action="export-job-json" data-id="${job.id}">Export JSON</button>
+              <button class="small danger" data-action="remove-job" data-id="${job.id}">Remove</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderHeader() {
+      const job = activeJob();
+      if (!job) return;
+      refs.currentJobTitle.textContent = job.title || "Untitled Job";
+      refs.currentJobMeta.textContent = `${job.productionCompany || "No production company"} • ${job.days.length} day${job.days.length === 1 ? "" : "s"} • Invoice ${job.invoiceNumber || "not set"}`;
+
+      refs.jobTitle.value = job.title || "";
+      refs.invoiceDate.value = job.invoiceDate || "";
+      refs.invoiceNumber.value = job.invoiceNumber || "";
+      refs.productionCompany.value = job.productionCompany || "";
+      refs.vehicleName.value = job.vehicleName || "";
+      refs.jobMileageStart.value = job.jobMileageStart || "";
+      refs.jobMileageEnd.value = job.jobMileageEnd || "";
+      refs.jobMileageTotal.value = jobMileage(job).toFixed(1);
+      refs.toName.value = job.toName || "";
+      refs.toAddress.value = job.toAddress || "";
+      refs.yourName.value = job.yourName || "";
+      refs.yourAddress.value = job.yourAddress || "";
+      refs.yourSortCode.value = job.yourSortCode || "";
+      refs.yourBankAccount.value = job.yourBankAccount || "";
+      refs.clientRef.value = job.clientRef || "";
+      refs.generalNotes.value = job.generalNotes || "";
+
+      refs.rateStandard.value = job.settings.standardRate;
+      refs.rateHalf.value = job.settings.halfRate;
+      refs.rateDouble.value = job.settings.doubleRate;
+      refs.rateOffice.value = job.settings.officeRate;
+      refs.thresholdStandard.value = job.settings.standardThreshold;
+      refs.thresholdHalf.value = job.settings.halfThreshold;
+      refs.calcMode.value = job.settings.calcMode;
+      refs.sundayDouble.value = String(job.settings.sundayDouble);
+    }
+
+    function dayField(label, html, span = "span-3") {
+      return `<div class="field ${span}"><label>${label}</label>${html}</div>`;
+    }
+
+    function checkField(label, dayId, key, checked, span = "span-3") {
+      return `<div class="field ${span}"><label class="check-inline"><input type="checkbox" data-day-field="${dayId}" data-key="${key}" ${checked ? "checked" : ""} /> <span>${label}</span></label></div>`;
+    }
+
+    function expenseFieldBlock(day) {
+      return `
+        ${dayField("Expenses (£)", `<input type="number" min="0" step="0.01" data-day-field="${day.id}" data-key="expenseAmount" value="${esc(day.expenseAmount || "")}" placeholder="0.00" />`)}
+        ${dayField("Expense Details", `<input type="text" data-day-field="${day.id}" data-key="expenseNotes" value="${esc(day.expenseNotes || "")}" placeholder="Parking, fuel, congestion charge..." />`, "span-6")}
+      `;
+    }
+
+    function renderDays() {
+      const job = activeJob();
+      if (!job) return;
+
+      if (!job.days.length) {
+        refs.daysList.innerHTML = `<div class="empty">No day entries yet. Add a day to begin.</div>`;
+        return;
+      }
+
+      refs.daysList.innerHTML = job.days.map(day => {
+        const calc = calculateDay(job, day);
+        const typeOptions = [
+          ["production", "Production Day"],
+          ["collection", "Collection Day"],
+          ["return", "Return Day"],
+          ["office", "Office Day"]
+        ].map(([v, t]) => `<option value="${v}" ${day.type === v ? "selected" : ""}>${t}</option>`).join("");
+
+        let fields = `
+          ${dayField("Date", `<input type="date" data-day-field="${day.id}" data-key="date" value="${esc(day.date)}" />`)}
+          ${dayField("Day Type", `<select data-action="switch-day-type" data-id="${day.id}">${typeOptions}</select>`)}
+        `;
+
+        if (day.type === "office") {
+          fields += `
+            ${dayField("Start Time", `<input type="time" data-day-field="${day.id}" data-key="startTime" value="${esc(day.startTime)}" />`)}
+            ${dayField("Finish Time", `<input type="time" data-day-field="${day.id}" data-key="finishTime" value="${esc(day.finishTime || day.returnTime || "")}" />`)}
+            ${dayField("C/C", `
+              <select data-day-field="${day.id}" data-key="cCharge">
+                <option value="false" ${!day.cCharge ? "selected" : ""}>No</option>
+                <option value="true" ${day.cCharge ? "selected" : ""}>Yes</option>
+              </select>
+            `)}
+            
+            ${dayField("Tasks Done", `<input type="text" data-day-field="${day.id}" data-key="tasksDone" value="${esc(day.tasksDone || day.notes || "")}" placeholder="Optional" />`, "span-6")}
+            ${expenseFieldBlock(day)}
+          `;
+        } else if (day.type === "production") {
+          fields += `
+            ${dayField("Start", `<input type="time" data-day-field="${day.id}" data-key="startTime" value="${esc(day.startTime)}" />`)}
+            ${dayField("Arrive", `<input type="time" data-day-field="${day.id}" data-key="arriveTime" value="${esc(day.arriveTime)}" />`)}
+            ${dayField("Arrive Postcode", `<input type="text" data-day-field="${day.id}" data-key="arrivePostcode" value="${esc(day.arrivePostcode || "")}" placeholder="SW1A 1AA" />`)}
+            ${dayField("Call", `<input type="time" data-day-field="${day.id}" data-key="callTime" value="${esc(day.callTime)}" />`)}
+            ${dayField("Wrap", `<input type="time" data-day-field="${day.id}" data-key="wrapTime" value="${esc(day.wrapTime)}" />`)}
+            ${dayField("Wrap Postcode", `<input type="text" data-day-field="${day.id}" data-key="wrapPostcode" value="${esc(day.wrapPostcode || "")}" placeholder="N1 9GU" />`)}
+            ${dayField("Leave", `<input type="time" data-day-field="${day.id}" data-key="leaveTime" value="${esc(day.leaveTime)}" />`)}
+            ${dayField("RTB", `<input type="time" data-day-field="${day.id}" data-key="returnTime" value="${esc(day.returnTime)}" />`)}
+            ${checkField("Minimum 8 hour charge", day.id, "minCharge8h", day.minCharge8h)}
+            ${checkField("Night Shoot (all double time)", day.id, "nightShoot", day.nightShoot)}
+            ${checkField("Rest day charge (+8h standard)", day.id, "restDayCharge", day.restDayCharge)}
+            
+            ${dayField("ULEZ", `
+              <select data-day-field="${day.id}" data-key="ulez">
+                <option value="false" ${!day.ulez ? "selected" : ""}>No</option>
+                <option value="true" ${day.ulez ? "selected" : ""}>Yes</option>
+              </select>
+            `)}
+            ${dayField("C/C", `
+              <select data-day-field="${day.id}" data-key="cCharge">
+                <option value="false" ${!day.cCharge ? "selected" : ""}>No</option>
+                <option value="true" ${day.cCharge ? "selected" : ""}>Yes</option>
+              </select>
+            `)}
+            ${dayField("Notes", `<input type="text" data-day-field="${day.id}" data-key="notes" value="${esc(day.notes)}" placeholder="Optional notes" />`, "span-6")}
+            ${expenseFieldBlock(day)}
+          `;
+        } else {
+          fields += `
+            ${dayField("Start", `<input type="time" data-day-field="${day.id}" data-key="startTime" value="${esc(day.startTime)}" />`)}
+            ${dayField("RTB", `<input type="time" data-day-field="${day.id}" data-key="returnTime" value="${esc(day.returnTime)}" />`)}
+            ${day.type === "collection" ? dayField("Minimum 4 hour charge", `
+              <select data-day-field="${day.id}" data-key="minCharge4h">
+                <option value="false" ${!day.minCharge4h ? "selected" : ""}>Off</option>
+                <option value="true" ${day.minCharge4h ? "selected" : ""}>On</option>
+              </select>
+            `) : ""}
+            
+            ${dayField("ULEZ", `
+              <select data-day-field="${day.id}" data-key="ulez">
+                <option value="false" ${!day.ulez ? "selected" : ""}>No</option>
+                <option value="true" ${day.ulez ? "selected" : ""}>Yes</option>
+              </select>
+            `)}
+            ${dayField("C/C", `
+              <select data-day-field="${day.id}" data-key="cCharge">
+                <option value="false" ${!day.cCharge ? "selected" : ""}>No</option>
+                <option value="true" ${day.cCharge ? "selected" : ""}>Yes</option>
+              </select>
+            `)}
+            ${dayField("Notes", `<input type="text" data-day-field="${day.id}" data-key="notes" value="${esc(day.notes)}" placeholder="Optional" />`, "span-6")}
+            ${expenseFieldBlock(day)}
+          `;
+        }
+
+        return `
+          <div class="day-card">
+            <div class="day-head">
+              <div class="day-head-left">
+                <strong>${esc(formatDateLong(day.date) || "Day")}</strong>
+                <span class="day-badge">${esc(dayTypeLabel(day.type))}</span>
+                <span class="muted">${esc(formatDay(day.date))}</span>
+              </div>
+              <div class="toolbar">
+                <button class="small" data-action="move-day-up" data-id="${day.id}">↑</button>
+                <button class="small" data-action="move-day-down" data-id="${day.id}">↓</button>
+                <button class="small danger" data-action="delete-day" data-id="${day.id}">Delete</button>
+              </div>
+            </div>
+            <div class="day-body">
+              <span class="hidden" data-day-id="${day.id}"></span>
+              <div class="field-grid">${fields}</div>
+              <div class="summary-mini">
+                <div class="metric"><div class="label">Total Hours</div><div class="value" data-metric="total">${hrs(calc.totalHours)}</div></div>
+                <div class="metric"><div class="label">Standard</div><div class="value" data-metric="standard">${hrs(calc.standardHours)}</div></div>
+                <div class="metric"><div class="label">Time + Half</div><div class="value" data-metric="half">${hrs(calc.halfHours)}</div></div>
+                <div class="metric"><div class="label">Double / Office</div><div class="value" data-metric="other">${hrs(calc.doubleHours + calc.officeHours)}</div></div>
+                <div class="metric"><div class="label">Expenses</div><div class="value" data-metric="expenses">${money(calc.expenseValue)}</div></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderSummary() {
+      const job = activeJob();
+      if (!job) return;
+
+      let totalHours = 0;
+      let standard = 0;
+      let half = 0;
+      let double = 0;
+      let office = 0;
+      let expenses = 0;
+      let value = 0;
+
+      refs.summaryBody.innerHTML = job.days.map(day => {
+        const calc = calculateDay(job, day);
+        totalHours += calc.totalHours;
+        standard += calc.standardHours;
+        half += calc.halfHours;
+        double += calc.doubleHours;
+        office += calc.officeHours;
+        expenses += calc.expenseValue;
+        value += calc.value;
+
+        return `
+          <tr>
+            <td>${esc(formatDatePretty(day.date))}</td>
+            <td>${esc(dayTypeLabel(day.type))}</td>
+            <td class="print-numeric">${hrs(calc.totalHours)}</td>
+            <td class="print-numeric">${hrs(calc.standardHours)}</td>
+            <td class="print-numeric">${hrs(calc.halfHours)}</td>
+            <td class="print-numeric">${hrs(calc.doubleHours)}</td>
+            <td class="print-numeric">${hrs(calc.officeHours)}</td>
+            <td class="print-center">${day.cCharge ? "Yes" : "No"}</td>
+            <td class="print-center">${day.type === "office" ? "" : (day.ulez ? "Yes" : "No")}</td>
+            <td>${esc(day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || ""))}${day.type === "production" && (day.arrivePostcode || day.wrapPostcode) ? ` • Arrive PC: ${esc(day.arrivePostcode || "-")} • Wrap PC: ${esc(day.wrapPostcode || "-")}` : ''}${day.type === "collection" && day.minCharge4h ? ' • Min 4h' : ''}${day.type === "production" && day.minCharge8h ? ' • Min 8h' : ''}${day.type === "production" && day.nightShoot ? ' • Night Shoot' : ''}${day.restDayCharge ? ' • Rest day charge (+8h standard)' : ''}${day.expenseNotes ? ` • Expense: ${esc(day.expenseNotes)}` : ''}</td>
+            <td>${money(calc.expenseValue)}</td>
+            <td>${money(calc.value)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      refs.sumDays.textContent = String(job.days.length);
+      refs.sumHours.textContent = hrs(totalHours);
+      refs.sumMileage.textContent = jobMileage(job).toFixed(1);
+      refs.sumStd.textContent = hrs(standard);
+      refs.sumHalf.textContent = hrs(half);
+      refs.sumDouble.textContent = hrs(double);
+      refs.sumOffice.textContent = hrs(office);
+      refs.sumExpenses.textContent = money(expenses);
+      refs.sumValue.textContent = money(value);
+    }
+
+    function renderTabs() {
+      refs.tabTimings.classList.toggle("hidden", state.tab !== "timings");
+      refs.tabSummary.classList.toggle("hidden", state.tab !== "summary");
+      refs.tabSettings.classList.toggle("hidden", state.tab !== "settings");
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === state.tab);
+      });
+    }
+
+    function renderPrint() {
+      const job = activeJob();
+      if (!job) {
+        refs.printRoot.innerHTML = "";
+        return;
+      }
+
+      const dayRows = job.days.map(day => {
+        const calc = calculateDay(job, day);
+        return `
+          <tr>
+            <td>${esc(formatDatePretty(day.date))}</td>
+            <td>${esc(day.startTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.arriveTime || "")}${day.type === "production" && day.arrivePostcode ? `<br><small>${esc(day.arrivePostcode)}</small>` : ""}</td>
+            <td>${day.type === "office" ? "" : esc(day.callTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.wrapTime || "")}${day.type === "production" && day.wrapPostcode ? `<br><small>${esc(day.wrapPostcode)}</small>` : ""}</td>
+            <td>${day.type === "office" ? "" : esc(day.leaveTime || "")}</td>
+            <td>${esc(day.type === "office" ? (day.finishTime || day.returnTime || "") : (day.returnTime || ""))}</td>
+            <td>${day.type === "office" ? "" : (day.ulez ? "Yes" : "No")}</td>
+            <td>${day.cCharge ? "Yes" : "No"}</td>
+            <td>${esc(day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || ""))}${day.type === "collection" && day.minCharge4h ? '<br><small>Min 4h applied</small>' : ''}${day.type === "production" && day.minCharge8h ? '<br><small>Min 8h applied</small>' : ''}${day.type === "production" && day.nightShoot ? '<br><small>Night Shoot — all hours at double time</small>' : ''}${day.restDayCharge ? '<br><small>+ Rest day charge (8h standard)</small>' : ''}${calc.expenseValue ? `<br><small>Expenses: ${money(calc.expenseValue)}${day.expenseNotes ? ` — ${esc(day.expenseNotes)}` : ''}</small>` : ''}</td>
+            <td class="print-numeric">${hrs(calc.totalHours)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      let totalHours = 0;
+      let standardHours = 0;
+      let halfHours = 0;
+      let doubleHours = 0;
+      let officeHours = 0;
+      let expenseTotal = 0;
+      let labourTotal = 0;
+      let totalValue = 0;
+
+      const moneyRows = job.days.map(day => {
+        const calc = calculateDay(job, day);
+        totalHours += calc.totalHours;
+        standardHours += calc.standardHours;
+        halfHours += calc.halfHours;
+        doubleHours += calc.doubleHours;
+        officeHours += calc.officeHours;
+        expenseTotal += calc.expenseValue;
+        labourTotal += calc.labourValue;
+        totalValue += calc.value;
+
+        return `
+          <tr>
+            <td>${esc(formatDatePretty(day.date))}</td>
+            <td class="print-numeric">${hrs(calc.standardHours)}</td>
+            <td class="print-numeric">${hrs(calc.halfHours)}</td>
+            <td class="print-numeric">${hrs(calc.doubleHours)}</td>
+            <td class="print-numeric">${hrs(calc.officeHours)}</td>
+            <td>${money(calc.expenseValue)}${day.expenseNotes ? `<br><small>${esc(day.expenseNotes)}</small>` : ''}</td>
+            <td class="print-notes notes-cell">${esc(day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || ""))}${day.type === "production" && (day.arrivePostcode || day.wrapPostcode) ? ` • Arrive PC: ${esc(day.arrivePostcode || "-")} • Wrap PC: ${esc(day.wrapPostcode || "-")}` : ''}${day.type === "collection" && day.minCharge4h ? ' • Min 4h' : ''}${day.type === "production" && day.minCharge8h ? ' • Min 8h' : ''}${day.type === "production" && day.nightShoot ? ' • Night Shoot' : ''}${day.restDayCharge ? ' • + Rest day charge' : ''}</td>
+          </tr>
+        `;
+      }).join("");
+
+      const shouldShowPage2 = job.days.length > 0 || job.productionCompany || job.title || job.toName || job.yourName;
+
+      refs.printRoot.innerHTML = `
+        <section class="print-page page-1">
+          <div class="print-grid-top">
+            <div class="print-block">
+              <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
+              <p><span class="print-label">Production Co:</span> <span class="print-value">${esc(job.productionCompany || "")}</span></p>
+              <p><span class="print-label">Job Title:</span> <span class="print-value">${esc(job.title || "")}</span></p>
+            </div>
+            <div class="print-block">
+              <p><span class="print-value">${esc(job.vehicleName || "")}</span></p>
+              <p><span class="print-label">Start Mileage:</span> <span class="print-value">${esc(job.jobMileageStart || "")}</span></p>
+              <p><span class="print-label">End Mileage:</span> <span class="print-value">${esc(job.jobMileageEnd || "")}</span></p>
+              <p><span class="print-label">Total Mileage:</span> <span class="print-value">${jobMileage(job).toFixed(1)}</span></p>
+            </div>
+            <div class="print-page-num">Page 1</div>
+          </div>
+
+          <table class="print-table timesheet">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Start</th>
+                <th>Arrive</th>
+                <th>Call</th>
+                <th>Wrap</th>
+                <th>Leave</th>
+                <th>RTB / Finish</th>
+                <th>ULEZ</th>
+                <th>C/C</th>
+                <th>Notes</th>
+                <th>Total Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${dayRows}
+            </tbody>
+          </table>
+        </section>
+
+        ${shouldShowPage2 ? `
+        <section class="print-page page-2 compact">
+          <div class="print-grid-page2-top">
+            <div class="print-page2-box">
+              <div class="print-page2-title">TO:</div>
+              <p class="print-page2-name">${esc(job.toName || "")}</p>
+              ${esc(job.toAddress || "").replace(/\n/g, "<br>")}
+              <div class="gap"></div>
+              <p><span class="print-label">Prod. Co:</span> <span class="print-value">${esc(job.productionCompany || "")}</span></p>
+              <p><span class="print-label">Job:</span> <span class="print-value">${esc(job.title || "")}</span></p>
+              <div class="gap"></div>
+              <p><span class="print-value">Payable To ${esc(job.yourName || "Your Name")}</span></p>
+            </div>
+
+            <div class="print-page2-box">
+              <div class="print-page2-title">FROM:</div>
+              <p class="print-page2-name">${esc(job.yourName || "")}</p>
+              ${esc(job.yourAddress || "").replace(/\n/g, "<br>")}
+              <div class="gap"></div>
+              <div class="print-bank-row"><span class="print-label">Sort Code</span><span class="print-value">${esc(job.yourSortCode || "")}</span></div>
+              <div class="print-bank-row"><span class="print-label">Account</span><span class="print-value">${esc(job.yourBankAccount || "")}</span></div>
+            </div>
+
+            <div class="print-page-num">Page 2</div>
+          </div>
+
+          <table class="print-money-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Time + Half</th>
+                <th>Double Time</th>
+                <th>Office</th>
+                <th>Expenses</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${moneyRows}
+            </tbody>
+          </table>
+
+          <div class="print-totals">
+            <div class="print-totals-left">
+              <div class="print-breakdown-cell">
+                <div class="print-breakdown-label">Standard hours</div>
+                <div class="print-breakdown-value print-faint">${hrs(standardHours)}</div>
+                <div class="print-breakdown-value print-faint">${money(standardHours * Number(job.settings.standardRate || 0))}</div>
+              </div>
+              <div class="print-breakdown-cell">
+                <div class="print-breakdown-label">Time + half</div>
+                <div class="print-breakdown-value print-faint">${hrs(halfHours)}</div>
+                <div class="print-breakdown-value print-faint">${money(halfHours * Number(job.settings.halfRate || 0))}</div>
+              </div>
+              <div class="print-breakdown-cell">
+                <div class="print-breakdown-label">Double time</div>
+                <div class="print-breakdown-value print-faint">${hrs(doubleHours)}</div>
+                <div class="print-breakdown-value print-faint">${money(doubleHours * Number(job.settings.doubleRate || 0))}</div>
+              </div>
+              <div class="print-breakdown-cell">
+                <div class="print-breakdown-label">Office</div>
+                <div class="print-breakdown-value print-faint">${hrs(officeHours)}</div>
+                <div class="print-breakdown-value print-faint">${money(officeHours * Number(job.settings.officeRate || 0))}</div>
+              </div>
+              <div class="print-breakdown-cell">
+                <div class="print-breakdown-label">Expenses</div>
+                <div class="print-breakdown-value print-faint">${money(expenseTotal)}</div>
+              </div>
+              <div class="print-breakdown-cell">
+                <div class="print-breakdown-label">Total hours</div>
+                <div class="print-breakdown-value print-faint">${hrs(totalHours)}</div>
+              </div>
+            </div>
+
+            <div class="print-totals-right">
+              <div class="print-total-row">
+                <span>Invoice total</span>
+                <span>${money(labourTotal)}</span>
+              </div>
+              <div class="print-total-row">
+                <span>Expenses</span>
+                <span>${money(expenseTotal)}</span>
+              </div>
+              <div class="print-total-row print-grand-total">
+                <span><strong>Total incl. expenses</strong></span>
+                <strong>${money(totalValue)}</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+        ` : ""}
+      `;
+    }
+
+    function renderAll() {
+      ensureAtLeastOneJob();
+      renderJobs();
+      renderHeader();
+      renderDays();
+      renderSummary();
+      renderTabs();
+      renderPrint();
+    }
+
+    function bindTopInputs() {
+      const jobBindings = [
+        ["jobTitle", "title"],
+        ["invoiceDate", "invoiceDate"],
+        ["invoiceNumber", "invoiceNumber"],
+        ["productionCompany", "productionCompany"],
+        ["vehicleName", "vehicleName"],
+        ["jobMileageStart", "jobMileageStart"],
+        ["jobMileageEnd", "jobMileageEnd"],
+        ["toName", "toName"],
+        ["toAddress", "toAddress"],
+        ["yourName", "yourName"],
+        ["yourAddress", "yourAddress"],
+        ["yourSortCode", "yourSortCode"],
+        ["yourBankAccount", "yourBankAccount"],
+        ["clientRef", "clientRef"],
+        ["generalNotes", "generalNotes"]
+      ];
+
+      jobBindings.forEach(([id, key]) => {
+        const node = refs[id];
+        const handler = e => updateJobField(key, e.target.value);
+        node.addEventListener("input", handler);
+        node.addEventListener("change", handler);
+      });
+
+      refs.rateStandard.addEventListener("input", e => updateSetting("standardRate", Number(e.target.value)));
+      refs.rateHalf.addEventListener("input", e => updateSetting("halfRate", Number(e.target.value)));
+      refs.rateDouble.addEventListener("input", e => updateSetting("doubleRate", Number(e.target.value)));
+      refs.rateOffice.addEventListener("input", e => updateSetting("officeRate", Number(e.target.value)));
+      refs.thresholdStandard.addEventListener("input", e => updateSetting("standardThreshold", Number(e.target.value)));
+      refs.thresholdHalf.addEventListener("input", e => updateSetting("halfThreshold", Number(e.target.value)));
+      refs.calcMode.addEventListener("change", e => updateSetting("calcMode", e.target.value));
+      refs.sundayDouble.addEventListener("change", e => updateSetting("sundayDouble", e.target.value === "true"));
+    }
+
+    function bindGlobalEvents() {
+      document.addEventListener("click", e => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        const type = btn.dataset.type;
+        const tab = btn.dataset.tab;
+
+        if (action === "new-job") createJob();
+        if (action === "duplicate-job") duplicateJob();
+        if (action === "toggle-theme") toggleTheme();
+        if (action === "export-pdf") {
+          renderPrint();
+          window.print();
+        }
+        if (action === "export-current-json") exportCurrentJSON();
+        if (action === "backup-all") backupAllJobs();
+        if (action === "reset-current") resetCurrentJob();
+        if (action === "reset-all") resetAllJobs();
+        if (action === "select-job") setActiveJob(id);
+        if (action === "export-job-json") {
+          const job = state.jobs.find(j => j.id === id);
+          exportSingleJob(job);
+        }
+        if (action === "remove-job") removeJob(id);
+        if (action === "switch-tab") switchTab(tab);
+        if (action === "add-day") addDay(type);
+        if (action === "delete-day") deleteDay(id);
+        if (action === "move-day-up") moveDay(id, -1);
+        if (action === "move-day-down") moveDay(id, 1);
+      });
+
+      document.addEventListener("input", e => {
+        const node = e.target.closest("[data-day-field]");
+        if (!node) return;
+        if (node.tagName === "SELECT") return;
+        const dayId = node.dataset.dayField;
+        const key = node.dataset.key;
+        const value = node.type === "checkbox" ? node.checked : node.value;
+        updateDay(dayId, key, value, { rerenderDays: false });
+      });
+
+      document.addEventListener("change", e => {
+        const node = e.target.closest("[data-day-field]");
+        if (node) {
+          const dayId = node.dataset.dayField;
+          const key = node.dataset.key;
+          let value = node.type === "checkbox" ? node.checked : node.value;
+          if (node.tagName === "SELECT" && ["cCharge", "ulez", "minCharge4h", "minCharge8h"].includes(key)) value = value === "true";
+          updateDay(dayId, key, value, { rerenderDays: node.tagName === "SELECT" });
+          return;
+        }
+
+        const typeNode = e.target.closest('[data-action="switch-day-type"]');
+        if (typeNode) {
+          switchDayType(typeNode.dataset.id, typeNode.value);
+        }
+      });
+
+      document.getElementById("importJson").addEventListener("change", e => {
+        const file = e.target.files && e.target.files[0];
+        if (file) importJob(file);
+        e.target.value = "";
+      });
+    }
+
+    initTheme();
+    loadState();
+    bindTopInputs();
+    bindGlobalEvents();
+    refs.year.textContent = new Date().getFullYear();
+    renderAll();
+  </script>
+</body>
+</html>
