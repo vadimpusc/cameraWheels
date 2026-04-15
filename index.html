@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0a0d14" />
   <script src="./jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <title>Camera Car Invoice Tool</title>
   <style>
     :root {
@@ -2331,53 +2332,52 @@
     async function exportPDF() {
       const job = activeJob();
       if (!job) return;
+      if (!window.html2canvas) return;
 
       renderPrint();
+
       const printRoot = document.getElementById("printRoot");
       const pages = printRoot.querySelectorAll(".print-page");
       if (!pages.length) return;
+
+      printRoot.style.display = "block";
+      printRoot.style.position = "absolute";
+      printRoot.style.left = "-9999px";
+      printRoot.style.top = "0";
+
+      await new Promise(r => setTimeout(r, 50));
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
       const pageWidth = 297;
-      const margin = 0;
+      const margin = 5;
 
-      const options = {
-        callback: null,
-        x: margin,
-        y: margin,
-        width: pageWidth - margin * 2,
-        windowWidth: 1000,
-        html2canvas: {
-          scale: 2,
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) doc.addPage("a4", "landscape");
+
+        const canvas = await html2canvas(pages[i], {
+          scale: 1,
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff"
-        }
-      };
+        });
 
-      async function addPageRecursive(index) {
-        if (index >= pages.length) {
-          const title = (job.title || "").trim() || "Job";
-          const prodCo = (job.productionCompany || "").trim() || "Production";
-          const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
-          doc.save(filename);
-          return;
-        }
+        if (!canvas.width || !canvas.height) continue;
 
-        if (index > 0) {
-          doc.addPage("a4", "landscape");
-        }
+        const imgData = canvas.toDataURL("image/png");
+        const pdfWidth = pageWidth - margin * 2;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-        options.callback = () => {
-          addPageRecursive(index + 1);
-        };
-
-        doc.html(pages[index], options);
+        doc.addImage(imgData, "PNG", margin, margin, pdfWidth, pdfHeight);
       }
 
-      addPageRecursive(0);
+      printRoot.style.display = "";
+
+      const title = (job.title || "").trim() || "Job";
+      const prodCo = (job.productionCompany || "").trim() || "Production";
+      const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
+      doc.save(filename);
     }
 
     function importJob(file) {
