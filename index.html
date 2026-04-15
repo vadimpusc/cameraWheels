@@ -2357,7 +2357,7 @@
         if (i > 0) doc.addPage("a4", "landscape");
 
         const canvas = await html2canvas(pages[i], {
-          scale: 1,
+          scale: 2,
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff"
@@ -2365,11 +2365,11 @@
 
         if (!canvas.width || !canvas.height) continue;
 
-        const imgData = canvas.toDataURL("image/png");
+        const imgData = canvas.toDataURL("image/jpeg", 0.95);
         const pdfWidth = pageWidth - margin * 2;
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-        doc.addImage(imgData, "PNG", margin, margin, pdfWidth, pdfHeight);
+        doc.addImage(imgData, "JPEG", margin, margin, pdfWidth, pdfHeight);
       }
 
       printRoot.style.display = "";
