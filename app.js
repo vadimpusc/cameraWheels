@@ -363,14 +363,15 @@
     }
 
     async function resetAllJobs() {
-      const confirmed = await showModal("Reset All", "Reset all jobs? This clears everything in the app.");
+      const confirmed = await showModal("Reset All", "Reset all jobs? This will clear ALL data including all jobs and reset the app to its initial state. This action cannot be undone.");
       if (!confirmed) return;
-      const job = defaultJob();
-      state.jobs = [job];
-      state.activeJobId = job.id;
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(THEME_KEY);
+      localStorage.removeItem("install_dismissed");
+      state.jobs = [defaultJob()];
+      state.activeJobId = state.jobs[0].id;
       state.tab = "timings";
-      saveState();
-      renderAll();
+      location.reload();
     }
 
     async function exportCurrentJSON() {

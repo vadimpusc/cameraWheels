@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0a0d14" />
   <script src="./jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="./html2canvas.min.js"></script>
   <title>Camera Car Invoice Tool</title>
   <style>
     :root {
@@ -2551,13 +2551,14 @@
     }
 
     function resetAllJobs() {
-      if (!confirm("Reset all jobs? This clears everything in the app.")) return;
-      const job = defaultJob();
-      state.jobs = [job];
-      state.activeJobId = job.id;
+      if (!confirm("Reset all jobs? This will clear ALL data including all jobs and reset the app to its initial state. This action cannot be undone.")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(THEME_KEY);
+      localStorage.removeItem("install_dismissed");
+      state.jobs = [defaultJob()];
+      state.activeJobId = state.jobs[0].id;
       state.tab = "timings";
-      saveState();
-      renderAll();
+      location.reload();
     }
 
     function exportCurrentJSON() {
