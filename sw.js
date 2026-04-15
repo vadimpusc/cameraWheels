@@ -1,10 +1,11 @@
-const CACHE_NAME = 'camera-wheels-v2';
+const CACHE_NAME = 'camera-wheels-v6';
 const ASSETS = [
   './index.html',
   './manifest.json',
   './icon.png',
   './app.js',
-  './sw.js'
+  './sw.js',
+  './jspdf.umd.min.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -33,25 +34,19 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
+    fetch(event.request).then((response) => {
+      if (!response || response.status !== 200) {
+        return response;
       }
       
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-        
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        
-        return response;
-      }).catch(() => {
-        return caches.match('./index.html');
+      const responseToCache = response.clone();
+      caches.open(CACHE_NAME).then((cache) => {
+        cache.put(event.request, responseToCache);
       });
+      
+      return response;
+    }).catch(() => {
+      return caches.match(event.request);
     })
   );
 });

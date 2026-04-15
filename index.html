@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0a0d14" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <title>Camera Car Production Invoice Tool</title>
+  <script src="./jspdf.umd.min.js"></script>
+  <title>Camera Car Invoice Tool</title>
   <style>
     :root {
       --bg: #0a0d14;
@@ -1026,7 +1026,7 @@
   <div class="app">
     <header class="hero screen-only">
       <div>
-        <h1>Camera Car Production Invoice Tool</h1>
+        <h1>Camera Car Invoice Tool</h1>
         <p><a href="https://sanrokuku.com" target="_blank">Created by San Roku Ku</a></p>
       </div>
       <div class="hero-actions">
@@ -1058,8 +1058,8 @@
               Every change auto-saves in this browser. Export JSON for backups.
             </div>
             <div class="toolbar">
-              <button data-action="export-current-json">Export Current JSON</button>
-              <label class="file-label" for="importJson">Import Job JSON</label>
+              <button data-action="export-current-json">Export Current Job</button>
+              <label class="file-label" for="importJson">Import Job</label>
               <input id="importJson" class="hidden" type="file" accept=".json,application/json" />
               <button class="danger" data-action="reset-current">Reset Current</button>
               <button class="danger" data-action="reset-all">Reset All</button>
@@ -1347,9 +1347,9 @@
           © <span id="year"></span> <a href="https://sanrokuku.com" target="_blank">Created by San Roku Ku</a>
         </footer>
       </main>
-    </div>
+  </div>
 
-    <section class="print-only" id="printRoot"></section>
+  <section class="print-only" id="printRoot"></section>
   </div>
 
   <script>
@@ -1643,7 +1643,10 @@
 
     function exportSingleJob(job) {
       if (!job) return;
-      downloadBlob(new Blob([JSON.stringify(job, null, 2)], { type: "application/json" }), safeFileName(job.title) + ".json");
+      const title = safeFileName(job.title);
+      const prodCo = safeFileName(job.productionCompany);
+      const filename = prodCo ? `${title} - ${prodCo}.json` : `${title}.json`;
+      downloadBlob(new Blob([JSON.stringify(job, null, 2)], { type: "application/json" }), filename);
     }
 
     function backupAllJobs() {
@@ -1652,6 +1655,164 @@
         jobs: state.jobs
       };
       downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), `invoice-backup-${todayISO()}.json`);
+    }
+
+    async function exportPDF() {
+      const job = activeJob();
+      if (!job) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      let y = margin;
+
+      function addPage() {
+        doc.addPage();
+        y = margin;
+      }
+
+      function checkPageBreak(needed) {
+        if (y + needed > pageHeight - margin) {
+          addPage();
+        }
+      }
+
+      function escPDF(text) {
+        return String(text || "").replace(/"/g, "'");
+      }
+
+      doc.setFontSize(18);
+      doc.text("Camera Car Invoice", margin, y);
+      y += 10;
+
+      doc.setFontSize(10);
+      doc.text(`Invoice Date: ${escPDF(formatDateLong(job.invoiceDate))}`, margin, y); y += 5;
+      doc.text(`Invoice No: ${escPDF(job.invoiceNumber || "")}`, margin, y); y += 5;
+      doc.text(`Production Co: ${escPDF(job.productionCompany || "")}`, margin, y); y += 5;
+      doc.text(`Job Title: ${escPDF(job.title || "")}`, margin, y); y += 5;
+      if (job.clientRef) {
+        doc.text(`Client Ref: ${escPDF(job.clientRef)}`, margin, y); y += 5;
+      }
+
+      y += 5;
+      doc.setFontSize(14);
+      doc.text(`Vehicle: ${escPDF(job.vehicleName || "VEHICLE")}`, margin, y); y += 7;
+      doc.setFontSize(10);
+      doc.text(`Mileage: ${jobMileage(job).toFixed(1)} miles`, margin, y); y += 10;
+
+      doc.setFontSize(12);
+      doc.text("Timesheet", margin, y); y += 8;
+
+      doc.setFontSize(8);
+      const headers = ["Date", "Start", "Arrive", "Call", "Wrap", "Leave", "RTB", "ULEZ", "C/C", "Notes", "Hours"];
+      const colWidths = [22, 15, 22, 15, 22, 15, 20, 12, 12, 45, 15];
+      let x = margin;
+      headers.forEach((h, i) => {
+        doc.text(h, x, y);
+        x += colWidths[i];
+      });
+      y += 5;
+
+      job.days.forEach(day => {
+        const calc = calculateDay(job, day);
+        checkPageBreak(10);
+        x = margin;
+        const row = [
+          formatDatePretty(day.date),
+          day.startTime || "",
+          day.arriveTime || "",
+          day.callTime || "",
+          day.wrapTime || "",
+          day.leaveTime || "",
+          day.returnTime || "",
+          day.ulez ? "Yes" : "No",
+          day.cCharge ? "Yes" : "No",
+          (day.notes || "").substring(0, 30),
+          hrs(calc.totalHours)
+        ];
+        row.forEach((cell, i) => {
+          doc.text(String(cell), x, y);
+          x += colWidths[i];
+        });
+        y += 5;
+      });
+
+      y += 10;
+      checkPageBreak(60);
+
+      doc.setFontSize(12);
+      doc.text("Invoice Summary", margin, y); y += 8;
+      doc.setFontSize(10);
+
+      doc.text(`TO: ${escPDF(job.toName || "")}`, margin, y); y += 5;
+      if (job.toAddress) {
+        const addrLines = job.toAddress.split("\n");
+        addrLines.forEach(line => {
+          doc.text(escPDF(line), margin, y); y += 5;
+        });
+      }
+
+      y += 5;
+      doc.text(`FROM: ${escPDF(job.yourName || "")}`, margin, y); y += 5;
+      if (job.yourAddress) {
+        const addrLines = job.yourAddress.split("\n");
+        addrLines.forEach(line => {
+          doc.text(escPDF(line), margin, y); y += 5;
+        });
+      }
+
+      if (job.yourSortCode || job.yourBankAccount) {
+        y += 5;
+        doc.text(`Sort Code: ${escPDF(job.yourSortCode || "")}`, margin, y); y += 5;
+        doc.text(`Account: ${escPDF(job.yourBankAccount || "")}`, margin, y); y += 5;
+      }
+
+      let totalHours = 0, standardHours = 0, halfHours = 0, doubleHours = 0, officeHours = 0, expenseTotal = 0, labourTotal = 0;
+      job.days.forEach(day => {
+        const calc = calculateDay(job, day);
+        totalHours += calc.totalHours;
+        standardHours += calc.standardHours;
+        halfHours += calc.halfHours;
+        doubleHours += calc.doubleHours;
+        officeHours += calc.officeHours;
+        expenseTotal += calc.expenseValue;
+        labourTotal += calc.labourValue;
+      });
+
+      y += 10;
+      doc.text(`Standard: ${hrs(standardHours)} x ${money(Number(job.settings.standardRate || 0))}`, margin, y); y += 5;
+      doc.text(`Time+Half: ${hrs(halfHours)} x ${money(Number(job.settings.halfRate || 0))}`, margin, y); y += 5;
+      doc.text(`Double: ${hrs(doubleHours)} x ${money(Number(job.settings.doubleRate || 0))}`, margin, y); y += 5;
+      doc.text(`Office: ${hrs(officeHours)} x ${money(Number(job.settings.officeRate || 0))}`, margin, y); y += 5;
+      doc.text(`Expenses: ${money(expenseTotal)}`, margin, y); y += 5;
+
+      const mileage = jobMileage(job);
+      if (mileage > 0) {
+        doc.text(`Mileage: ${mileage.toFixed(1)} miles`, margin, y); y += 5;
+      }
+
+      y += 10;
+      doc.setFontSize(12);
+      doc.text(`Labour Total: ${money(labourTotal)}`, margin, y); y += 7;
+      doc.text(`Expenses: ${money(expenseTotal)}`, margin, y); y += 7;
+
+      const subtotal = labourTotal + expenseTotal;
+      if ((job.settings.vatRate || 0) > 0) {
+        const vat = subtotal * (job.settings.vatRate / 100);
+        doc.text(`VAT (${job.settings.vatRate}%): ${money(vat)}`, margin, y); y += 7;
+      }
+
+      const total = (job.settings.vatRate || 0) > 0 ? subtotal * (1 + job.settings.vatRate / 100) : subtotal;
+      doc.setFontSize(14);
+      doc.text(`TOTAL: ${money(total)}`, margin, y);
+
+      const title = (job.title || "").trim() || "Job";
+      const prodCo = (job.productionCompany || "").trim() || "Production";
+      const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
+      doc.save(filename);
     }
 
     function importJob(file) {
@@ -2090,7 +2251,7 @@
             </div>
             <div class="job-actions">
               <button class="small" data-action="select-job" data-id="${job.id}">Open</button>
-              <button class="small" data-action="export-job-json" data-id="${job.id}">Export JSON</button>
+              <button class="small" data-action="export-job-json" data-id="${job.id}">Export Job</button>
               <button class="small danger" data-action="remove-job" data-id="${job.id}">Remove</button>
             </div>
           </div>
@@ -2596,8 +2757,11 @@
         const tab = btn.dataset.tab;
 
         if (action === "export-pdf") {
-          renderPrint();
-          window.print();
+          if (window.jspdf && window.jspdf.jsPDF) {
+            exportPDF();
+          } else {
+            alert("PDF export is unavailable because the PDF library failed to load.");
+          }
           return;
         }
         

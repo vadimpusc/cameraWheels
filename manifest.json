@@ -1,5 +1,5 @@
 {
-  "name": "Camera Car Production Invoice Tool",
+  "name": "Camera Car Invoice Tool",
   "short_name": "Camera Car",
   "description": "Production invoice and timesheet app",
   "start_url": "./index.html",

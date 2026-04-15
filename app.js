@@ -381,7 +381,10 @@
 
     async function exportSingleJob(job) {
       if (!job) return;
-      await downloadBlob(new Blob([JSON.stringify(job, null, 2)], { type: "application/json" }), safeFileName(job.title) + ".json");
+      const title = safeFileName(job.title);
+      const prodCo = safeFileName(job.productionCompany);
+      const filename = prodCo ? `${title} - ${prodCo}.json` : `${title}.json`;
+      await downloadBlob(new Blob([JSON.stringify(job, null, 2)], { type: "application/json" }), filename);
     }
 
     async function backupAllJobs() {
@@ -876,7 +879,7 @@
             </div>
             <div class="job-actions">
               <button class="small" data-action="select-job" data-id="${job.id}">Open</button>
-              <button class="small" data-action="export-job-json" data-id="${job.id}">Export JSON</button>
+              <button class="small" data-action="export-job-json" data-id="${job.id}">Export Job</button>
               <button class="small danger" data-action="remove-job" data-id="${job.id}">Remove</button>
             </div>
           </div>
@@ -1282,8 +1285,8 @@
       doc.setFontSize(14);
       doc.text(`TOTAL: ${money(total)}`, margin, y);
 
-      const title = job.title || "Job";
-      const prodCo = job.productionCompany || "Production";
+      const title = (job.title || "").trim() || "Job";
+      const prodCo = (job.productionCompany || "").trim() || "Production";
       const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
       doc.save(filename);
     }
@@ -1590,11 +1593,10 @@
         if (action === "duplicate-job") duplicateJob();
         if (action === "toggle-theme") toggleTheme();
         if (action === "export-pdf") {
-          if (window.jspdf) {
+          if (window.jspdf && window.jspdf.jsPDF) {
             exportPDF();
           } else {
-            renderPrint();
-            window.print();
+            alert("PDF export is unavailable because the PDF library failed to load.");
           }
         }
         if (action === "export-current-json") exportCurrentJSON();
