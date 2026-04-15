@@ -1700,6 +1700,7 @@
         <button data-action="duplicate-job">Duplicate Job</button>
         <button data-action="toggle-theme">Dark / Light</button>
         <button data-action="export-pdf">Export Invoice</button>
+        <button data-action="download-pdf">Download Clean PDF</button>
       </div>
     </header>
 
@@ -2331,166 +2332,52 @@
       const job = activeJob();
       if (!job) return;
 
+      renderPrint();
+      const printRoot = document.getElementById("printRoot");
+      const pages = printRoot.querySelectorAll(".print-page");
+      if (!pages.length) return;
+
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
-      let y = margin;
+      const pageWidth = 297;
+      const margin = 0;
 
-      function addPage() {
-        doc.addPage();
-        y = margin;
-      }
-
-      function checkPageBreak(needed) {
-        if (y + needed > pageHeight - margin) {
-          addPage();
+      const options = {
+        callback: null,
+        x: margin,
+        y: margin,
+        width: pageWidth - margin * 2,
+        windowWidth: 1000,
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#ffffff"
         }
+      };
+
+      async function addPageRecursive(index) {
+        if (index >= pages.length) {
+          const title = (job.title || "").trim() || "Job";
+          const prodCo = (job.productionCompany || "").trim() || "Production";
+          const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
+          doc.save(filename);
+          return;
+        }
+
+        if (index > 0) {
+          doc.addPage("a4", "landscape");
+        }
+
+        options.callback = () => {
+          addPageRecursive(index + 1);
+        };
+
+        doc.html(pages[index], options);
       }
 
-      function escPDF(text) {
-        return String(text || "").replace(/"/g, "'");
-      }
-
-      doc.setFontSize(18);
-      doc.text("Camera Car Invoice", margin, y);
-      y += 10;
-
-      doc.setFontSize(10);
-      doc.text(`Invoice Date: ${escPDF(formatDateLong(job.invoiceDate))}`, margin, y); y += 5;
-      doc.text(`Invoice No: ${escPDF(job.invoiceNumber || "")}`, margin, y); y += 5;
-      doc.text(`Production Co: `, margin, y);
-      doc.setFont(undefined, 'bold');
-      doc.text(escPDF(job.productionCompany || ""), margin + 50, y);
-      doc.setFont(undefined, 'normal');
-      y += 5;
-      doc.text(`Job Title: ${escPDF(job.title || "")}`, margin, y); y += 5;
-      if (job.clientRef) {
-        doc.text(`Client Ref: ${escPDF(job.clientRef)}`, margin, y); y += 5;
-      }
-
-      y += 5;
-      doc.setFontSize(14);
-      doc.text(`Vehicle: ${escPDF(job.vehicleName || "VEHICLE")}`, margin, y); y += 7;
-      doc.setFontSize(10);
-      doc.text(`Mileage: `, margin, y);
-      doc.setFont(undefined, 'bold');
-      doc.text(`${jobMileage(job).toFixed(1)} miles`, margin + 35, y);
-      doc.setFont(undefined, 'normal');
-      y += 10;
-
-      doc.setFontSize(12);
-      doc.text("Timesheet", margin, y); y += 8;
-
-      doc.setFontSize(8);
-      const headers = ["Date", "Start", "Arrive", "Call", "Wrap", "Leave", "RTB", "ULEZ", "C/C", "Notes", "Hours"];
-      const colWidths = [22, 15, 22, 15, 22, 15, 20, 12, 12, 45, 15];
-      let x = margin;
-      headers.forEach((h, i) => {
-        doc.text(h, x, y);
-        x += colWidths[i];
-      });
-      y += 5;
-
-      job.days.forEach(day => {
-        const calc = calculateDay(job, day);
-        checkPageBreak(10);
-        x = margin;
-        const row = [
-          formatDatePretty(day.date),
-          day.startTime || "",
-          day.arriveTime || "",
-          day.callTime || "",
-          day.wrapTime || "",
-          day.leaveTime || "",
-          day.returnTime || "",
-          day.ulez ? "Yes" : "No",
-          day.cCharge ? "Yes" : "No",
-          (day.notes || "").substring(0, 30),
-          hrs(calc.totalHours)
-        ];
-        row.forEach((cell, i) => {
-          doc.text(String(cell), x, y);
-          x += colWidths[i];
-        });
-        y += 5;
-      });
-
-      y += 10;
-      checkPageBreak(60);
-
-      doc.setFontSize(12);
-      doc.text("Invoice Summary", margin, y); y += 8;
-      doc.setFontSize(10);
-
-      doc.text(`TO: ${escPDF(job.toName || "")}`, margin, y); y += 5;
-      if (job.toAddress) {
-        const addrLines = job.toAddress.split("\n");
-        addrLines.forEach(line => {
-          doc.text(escPDF(line), margin, y); y += 5;
-        });
-      }
-
-      y += 5;
-      doc.text(`FROM: ${escPDF(job.yourName || "")}`, margin, y); y += 5;
-      if (job.yourAddress) {
-        const addrLines = job.yourAddress.split("\n");
-        addrLines.forEach(line => {
-          doc.text(escPDF(line), margin, y); y += 5;
-        });
-      }
-
-      if (job.yourSortCode || job.yourBankAccount) {
-        y += 5;
-        doc.text(`Sort Code: ${escPDF(job.yourSortCode || "")}`, margin, y); y += 5;
-        doc.text(`Account: ${escPDF(job.yourBankAccount || "")}`, margin, y); y += 5;
-      }
-
-      let totalHours = 0, standardHours = 0, halfHours = 0, doubleHours = 0, officeHours = 0, expenseTotal = 0, labourTotal = 0;
-      job.days.forEach(day => {
-        const calc = calculateDay(job, day);
-        totalHours += calc.totalHours;
-        standardHours += calc.standardHours;
-        halfHours += calc.halfHours;
-        doubleHours += calc.doubleHours;
-        officeHours += calc.officeHours;
-        expenseTotal += calc.expenseValue;
-        labourTotal += calc.labourValue;
-      });
-
-      y += 10;
-      doc.text(`Standard: ${hrs(standardHours)} x ${money(Number(job.settings.standardRate || 0))}`, margin, y); y += 5;
-      doc.text(`Time+Half: ${hrs(halfHours)} x ${money(Number(job.settings.halfRate || 0))}`, margin, y); y += 5;
-      doc.text(`Double: ${hrs(doubleHours)} x ${money(Number(job.settings.doubleRate || 0))}`, margin, y); y += 5;
-      doc.text(`Office: ${hrs(officeHours)} x ${money(Number(job.settings.officeRate || 0))}`, margin, y); y += 5;
-      doc.text(`Expenses: ${money(expenseTotal)}`, margin, y); y += 5;
-
-      const mileage = jobMileage(job);
-      if (mileage > 0) {
-        doc.text(`Mileage: ${mileage.toFixed(1)} miles`, margin, y); y += 5;
-      }
-
-      y += 10;
-      doc.setFontSize(12);
-      doc.text(`Labour Total: ${money(labourTotal)}`, margin, y); y += 7;
-      doc.text(`Expenses: ${money(expenseTotal)}`, margin, y); y += 7;
-
-      const subtotal = labourTotal + expenseTotal;
-      if ((job.settings.vatRate || 0) > 0) {
-        const vat = subtotal * (job.settings.vatRate / 100);
-        doc.text(`VAT (${job.settings.vatRate}%): ${money(vat)}`, margin, y); y += 7;
-      }
-
-      const total = (job.settings.vatRate || 0) > 0 ? subtotal * (1 + job.settings.vatRate / 100) : subtotal;
-      doc.setFontSize(14);
-      doc.text(`TOTAL: ${money(total)}`, margin, y);
-
-      const title = (job.title || "").trim() || "Job";
-      const prodCo = (job.productionCompany || "").trim() || "Production";
-      const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
-      doc.save(filename);
+      addPageRecursive(0);
     }
 
     function importJob(file) {
@@ -3447,7 +3334,12 @@
           window.print();
           return;
         }
-        
+
+        if (action === "download-pdf") {
+          exportPDF();
+          return;
+        }
+
         if (action === "new-job") createJob();
         if (action === "duplicate-job") duplicateJob();
         if (action === "toggle-theme") toggleTheme();
