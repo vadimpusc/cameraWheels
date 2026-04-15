@@ -765,91 +765,6 @@
       display: none;
     }
 
-    body.pdf-export-mode .print-page,
-    body.pdf-export-mode .print-page * {
-      font-size: 9pt !important;
-      color: #111 !important;
-      background: #fff !important;
-      opacity: 1 !important;
-    }
-
-    body.pdf-export-mode .print-block p {
-      font-size: 9pt;
-      line-height: 1.3;
-    }
-
-    body.pdf-export-mode .print-table {
-      font-size: 8pt;
-    }
-
-    body.pdf-export-mode .print-table th,
-    body.pdf-export-mode .print-table td {
-      padding: 3px 4px;
-    }
-
-    body.pdf-export-mode .print-page2-box p {
-      font-size: 9pt;
-    }
-
-    #pdfExportRoot {
-      display: none;
-      position: absolute;
-      left: -9999px;
-      top: 0;
-      width: 1100px;
-      background: #fff;
-      color: #000;
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      padding: 15px;
-    }
-
-    #pdfExportRoot .pdf-page {
-      width: 1100px;
-      min-height: 600px;
-      page-break-after: always;
-      padding: 10px 15px;
-      box-sizing: border-box;
-    }
-
-    #pdfExportRoot .pdf-h1 { font-size: 12px; margin-bottom: 3px; }
-    #pdfExportRoot .pdf-h2 { font-size: 12px; margin-bottom: 8px; }
-
-    #pdfExportRoot .pdf-tbl {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-
-    #pdfExportRoot .pdf-tbl th,
-    #pdfExportRoot .pdf-tbl td {
-      padding: 2px 4px;
-      text-align: left;
-    }
-
-    #pdfExportRoot .pdf-tbl .num { text-align: right; }
-
-    #pdfExportRoot .pdf-s1 { margin-top: 6px; font-size: 12px; }
-
-    #pdfExportRoot .pdf-2c {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      margin-bottom: 20px;
-    }
-
-    #pdfExportRoot .pdf-col { font-size: 12px; }
-
-    #pdfExportRoot .pdf-sum {
-      margin-top: 15px;
-      font-size: 12px;
-    }
-
-    #pdfExportRoot .pdf-total {
-      margin-top: 8px;
-      font-weight: bold;
-    }
-
     @media (max-width: 1120px) {
       .main-grid,
       .summary-grid {
@@ -1488,6 +1403,253 @@
       }
     }
 
+    body.pdf-export-mode {
+      background: #fff !important;
+      color: #111 !important;
+    }
+
+    body.pdf-export-mode .print-only {
+      display: block !important;
+    }
+
+    body.pdf-export-mode .print-page {
+      width: 277mm;
+      min-height: 190mm;
+      color: #111 !important;
+      background: #fff !important;
+      padding: 2mm 0 0;
+      box-sizing: border-box;
+      page-break-after: always;
+      break-after: page;
+    }
+
+    body.pdf-export-mode .print-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    body.pdf-export-mode .print-page.page-2.compact {
+      min-height: 190mm;
+    }
+
+    body.pdf-export-mode .print-grid-top {
+      display: grid;
+      grid-template-columns: 1.1fr 0.95fr 0.22fr;
+      gap: 24px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    body.pdf-export-mode .print-label,
+    body.pdf-export-mode .print-value {
+      font-weight: 400;
+      color: #111 !important;
+    }
+
+    body.pdf-export-mode .print-bold,
+    body.pdf-export-mode .print-value.print-bold {
+      font-weight: 700;
+    }
+
+    body.pdf-export-mode .print-block p {
+      margin: 0 0 4px;
+      line-height: 1.35;
+      font-size: 11pt;
+      font-weight: 400;
+    }
+
+    body.pdf-export-mode .print-page-num {
+      text-align: right;
+      font-size: 11pt;
+      line-height: 1.35;
+    }
+
+    body.pdf-export-mode .print-continued {
+      margin: 0 0 8px;
+      font-size: 10pt;
+      color: #444 !important;
+    }
+
+    body.pdf-export-mode .print-table,
+    body.pdf-export-mode .print-money-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 11pt;
+      background: #fff !important;
+      color: #111 !important;
+    }
+
+    body.pdf-export-mode .print-money-table {
+      margin-bottom: 28px;
+    }
+
+    body.pdf-export-mode .print-table thead th,
+    body.pdf-export-mode .print-money-table thead th {
+      background: #f7f7f7 !important;
+      border: none !important;
+      border-top: 1px solid #888;
+      border-bottom: 1px solid #cfcfcf;
+      padding: 9px 6px 8px;
+      color: #111 !important;
+      font-weight: 500;
+      text-align: left;
+    }
+
+    body.pdf-export-mode .print-table td,
+    body.pdf-export-mode .print-money-table td {
+      border: none !important;
+      border-bottom: 1px solid #ececec !important;
+      padding: 7px 6px;
+      vertical-align: top;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      color: #111 !important;
+      background: #fff !important;
+    }
+
+    body.pdf-export-mode .print-table tbody tr:last-child td,
+    body.pdf-export-mode .print-money-table tbody tr:last-child td {
+      border-bottom: none !important;
+    }
+
+    body.pdf-export-mode .print-table td small,
+    body.pdf-export-mode .print-money-table td small {
+      display: block;
+      margin-top: 4px;
+      color: #444 !important;
+      line-height: 1.25;
+      font-size: 8.9pt;
+    }
+
+    body.pdf-export-mode .print-numeric {
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    body.pdf-export-mode .print-center {
+      text-align: center;
+    }
+
+    body.pdf-export-mode .print-notes {
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    body.pdf-export-mode .print-table .notes-cell,
+    body.pdf-export-mode .print-money-table .notes-cell,
+    body.pdf-export-mode .print-table .expense-cell,
+    body.pdf-export-mode .print-money-table .expense-cell {
+      font-size: 9.2pt;
+    }
+
+    body.pdf-export-mode .print-table.timesheet th:nth-child(1) { width: 8%; }
+    body.pdf-export-mode .print-table.timesheet th:nth-child(2),
+    body.pdf-export-mode .print-table.timesheet th:nth-child(3),
+    body.pdf-export-mode .print-table.timesheet th:nth-child(4),
+    body.pdf-export-mode .print-table.timesheet th:nth-child(5),
+    body.pdf-export-mode .print-table.timesheet th:nth-child(6),
+    body.pdf-export-mode .print-table.timesheet th:nth-child(7) { width: 8.5%; }
+    body.pdf-export-mode .print-table.timesheet th:nth-child(8),
+    body.pdf-export-mode .print-table.timesheet th:nth-child(9) { width: 5.5%; }
+    body.pdf-export-mode .print-table.timesheet th:nth-child(10) { width: 24%; }
+    body.pdf-export-mode .print-table.timesheet th:nth-child(11) { width: 8%; }
+
+    body.pdf-export-mode .print-grid-page2-top {
+      display: grid;
+      grid-template-columns: 1fr 1fr 0.22fr;
+      gap: 28px;
+      margin-bottom: 20px;
+      align-items: start;
+    }
+
+    body.pdf-export-mode .print-page2-box p {
+      margin: 0 0 5px;
+      line-height: 1.35;
+      font-size: 10.5pt;
+    }
+
+    body.pdf-export-mode .print-page2-box .gap {
+      margin-top: 14px;
+    }
+
+    body.pdf-export-mode .print-page2-title {
+      font-size: 10pt;
+      margin-bottom: 8px;
+      letter-spacing: 0.02em;
+    }
+
+    body.pdf-export-mode .print-page2-name {
+      font-weight: 500;
+      margin-top: 2px;
+      margin-bottom: 2px;
+    }
+
+    body.pdf-export-mode .print-bank-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 10px;
+    }
+
+    body.pdf-export-mode .print-totals {
+      margin-top: 22px;
+      border-top: 1px solid #999;
+      padding-top: 12px;
+      display: grid;
+      grid-template-columns: 1.35fr 0.9fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    body.pdf-export-mode .print-totals-left {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      font-size: 9.75pt;
+    }
+
+    body.pdf-export-mode .print-breakdown-cell {
+      min-width: 0;
+    }
+
+    body.pdf-export-mode .print-breakdown-label {
+      margin-bottom: 4px;
+      color: #555 !important;
+      font-size: 9pt;
+    }
+
+    body.pdf-export-mode .print-breakdown-value {
+      line-height: 1.3;
+    }
+
+    body.pdf-export-mode .print-totals-right {
+      font-size: 10.5pt;
+    }
+
+    body.pdf-export-mode .print-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    body.pdf-export-mode .print-grand-total {
+      border-top: 1px solid #111;
+      padding-top: 8px;
+      margin-top: 8px;
+    }
+
+    body.pdf-export-mode .print-total-row strong {
+      font-weight: 700;
+    }
+
+    body.pdf-export-mode .print-faint {
+      color: #111 !important;
+    }
+
     @media print {
       @page {
         size: A4 landscape;
@@ -1546,7 +1708,7 @@
 
       .print-grid-top {
         display: grid;
-        grid-template-columns: 1.2fr 1fr 0.32fr;
+        grid-template-columns: 1.1fr 0.95fr 0.22fr;
         gap: 24px;
         align-items: start;
         margin-bottom: 18px;
@@ -1573,6 +1735,12 @@
         text-align: right;
         font-size: 11pt;
         line-height: 1.35;
+      }
+
+      .print-continued {
+        margin: 0 0 8px;
+        font-size: 10pt;
+        color: #444;
       }
 
       .print-table,
@@ -1666,7 +1834,7 @@
 
       .print-grid-page2-top {
         display: grid;
-        grid-template-columns: 1fr 1fr 0.32fr;
+        grid-template-columns: 1fr 1fr 0.22fr;
         gap: 28px;
         margin-bottom: 20px;
         align-items: start;
@@ -2107,7 +2275,6 @@
   </div>
 
   <section class="print-only" id="printRoot"></section>
-  <section class="print-only" id="pdfExportRoot"></section>
   </div>
 
   <script>
@@ -2399,86 +2566,12 @@
       exportSingleJob(job);
     }
 
-function exportSingleJob(job) {
+    function exportSingleJob(job) {
       if (!job) return;
       const title = safeFileName(job.title);
       const prodCo = safeFileName(job.productionCompany);
       const filename = prodCo ? `${title} - ${prodCo}.json` : `${title}.json`;
-      downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), filename);
-    }
-
-    function renderPrintPDF() {
-      const job = activeJob();
-      if (!job) return "";
-
-      const dayRows = job.days.map(day => {
-        const calc = calculateDay(job, day);
-        return `
-          <tr>
-            <td>${esc(formatDatePretty(day.date))}</td>
-            <td>${esc(day.startTime || "")}</td>
-            <td>${day.type === "office" ? "" : esc(day.arriveTime || "")}</td>
-            <td>${day.type === "office" ? "" : esc(day.callTime || "")}</td>
-            <td>${day.type === "office" ? "" : esc(day.wrapTime || "")}</td>
-            <td>${day.type === "office" ? "" : esc(day.leaveTime || "")}</td>
-            <td>${esc(day.returnTime || "")}</td>
-            <td>${day.ulez ? "Y" : "N"}</td>
-            <td>${day.cCharge ? "Y" : "N"}</td>
-            <td>${esc(day.notes || "").substring(0, 25)}</td>
-            <td class="num">${hrs(calc.totalHours)}</td>
-          </tr>
-        `;
-      }).join("");
-
-      let totalHours = 0, standardHours = 0, halfHours = 0, doubleHours = 0, officeHours = 0, expenseTotal = 0, labourTotal = 0;
-      job.days.forEach(day => {
-        const calc = calculateDay(job, day);
-        totalHours += calc.totalHours;
-        standardHours += calc.standardHours;
-        halfHours += calc.halfHours;
-        doubleHours += calc.doubleHours;
-        officeHours += calc.officeHours;
-        expenseTotal += calc.expenseValue;
-        labourTotal += calc.labourValue;
-      });
-
-      const vat = (labourTotal + expenseTotal) * (job.settings.vatRate || 0) / 100;
-      const total = labourTotal + expenseTotal + vat;
-
-      return `
-        <div class="pdf-page">
-          <div class="pdf-h1">${esc(formatDateLong(job.invoiceDate))} | ${esc(job.productionCompany || "")} | ${esc(job.title || "")}</div>
-          <div class="pdf-h2">${esc(job.vehicleName || "")} | Mileage: ${jobMileage(job).toFixed(1)} miles</div>
-          <table class="pdf-tbl">
-            <tr><th>Date</th><th>Start</th><th>Arrive</th><th>Call</th><th>Wrap</th><th>Leave</th><th>RTB</th><th>ULEZ</th><th>C/C</th><th>Notes</th><th>Hours</th></tr>
-            ${dayRows}
-          </table>
-          <div class="pdf-s1">Total Hours: ${hrs(totalHours)}</div>
-        </div>
-        <div class="pdf-page">
-          <div class="pdf-2c">
-            <div class="pdf-col">
-              <div>TO: ${esc(job.toName || "")}</div>
-              <div>${esc(job.toAddress || "").replace(/\n/g, " ")}</div>
-              <div>${esc(job.productionCompany || "")} - ${esc(job.title || "")}</div>
-            </div>
-            <div class="pdf-col">
-              <div>FROM: ${esc(job.yourName || "")}</div>
-              <div>${esc(job.yourAddress || "").replace(/\n/g, " ")}</div>
-              ${job.yourSortCode ? `<div>Sort Code: ${esc(job.yourSortCode)}</div>` : ""}
-              ${job.yourBankAccount ? `<div>Account: ${esc(job.yourBankAccount)}</div>` : ""}
-            </div>
-          </div>
-          <div class="pdf-sum">
-            <div>Standard ${hrs(standardHours)} x ${money(job.settings.standardRate||0)} = ${money(standardHours*(job.settings.standardRate||0))}</div>
-            <div>Time+Half ${hrs(halfHours)} x ${money(job.settings.halfRate||0)} = ${money(halfHours*(job.settings.halfRate||0))}</div>
-            <div>Double ${hrs(doubleHours)} x ${money(job.settings.doubleRate||0)} = ${money(doubleHours*(job.settings.doubleRate||0))}</div>
-            <div>Office ${hrs(officeHours)} x ${money(job.settings.officeRate||0)} = ${money(officeHours*(job.settings.officeRate||0))}</div>
-            <div>Expenses = ${money(expenseTotal)}</div>
-            <div class="pdf-total">Total = ${money(total)}</div>
-          </div>
-        </div>
-      `;
+      downloadBlob(new Blob([JSON.stringify(job, null, 2)], { type: "application/json" }), filename);
     }
 
     function backupAllJobs() {
@@ -2492,47 +2585,74 @@ function exportSingleJob(job) {
     async function exportPDF() {
       const job = activeJob();
       if (!job) return;
-      if (!window.html2canvas) return;
+      if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
+        alert("PDF export is unavailable because the PDF libraries failed to load.");
+        return;
+      }
 
-      const pdfRoot = document.getElementById("pdfExportRoot");
-      pdfRoot.innerHTML = renderPrintPDF();
-      pdfRoot.style.display = "block";
+      renderPrint();
 
-      await new Promise(r => setTimeout(r, 50));
+      const printRoot = refs.printRoot || document.getElementById("printRoot");
+      const pages = Array.from(printRoot.querySelectorAll(".print-page"));
+      if (!pages.length) return;
+
+      const previous = {
+        display: printRoot.style.display,
+        position: printRoot.style.position,
+        left: printRoot.style.left,
+        top: printRoot.style.top,
+        width: printRoot.style.width,
+        zIndex: printRoot.style.zIndex,
+      };
+
+      document.body.classList.add("pdf-export-mode");
+      printRoot.style.display = "block";
+      printRoot.style.position = "absolute";
+      printRoot.style.left = "-99999px";
+      printRoot.style.top = "0";
+      printRoot.style.width = "277mm";
+      printRoot.style.zIndex = "-1";
+
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = doc.internal.pageSize.getHeight();
 
-      const pages = pdfRoot.querySelectorAll(".pdf-page");
-      const pdfPageWidth = 287;
-      const pdfPageHeight = 180;
-      const margin = 8;
+      try {
+        for (let i = 0; i < pages.length; i++) {
+          const canvas = await window.html2canvas(pages[i], {
+            scale: Math.max(2, window.devicePixelRatio || 1),
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: "#ffffff",
+            logging: false,
+          });
 
-      for (let i = 0; i < pages.length; i++) {
-        if (i > 0) doc.addPage("a4", "portrait");
+          if (!canvas.width || !canvas.height) continue;
 
-        const canvas = await html2canvas(pages[i], {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: "#ffffff",
-          width: 1100,
-          height: 650
-        });
+          const imgData = canvas.toDataURL("image/png");
+          const imgWidth = pdfWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        if (!canvas.width || !canvas.height) continue;
+          if (i > 0) doc.addPage("a4", "landscape");
+          doc.addImage(imgData, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pdfHeight), undefined, "FAST");
+        }
 
-        const imgData = canvas.toDataURL("image/png");
-        const h = (canvas.height * pdfPageWidth) / canvas.width;
-        doc.addImage(imgData, "PNG", margin, margin, pdfPageWidth, h);
+        const title = (job.title || "").trim() || "Job";
+        const prodCo = (job.productionCompany || "").trim() || "Production";
+        const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\|?*]/g, "_");
+        doc.save(filename);
+      } finally {
+        document.body.classList.remove("pdf-export-mode");
+        printRoot.style.display = previous.display;
+        printRoot.style.position = previous.position;
+        printRoot.style.left = previous.left;
+        printRoot.style.top = previous.top;
+        printRoot.style.width = previous.width;
+        printRoot.style.zIndex = previous.zIndex;
       }
-
-      pdfRoot.innerHTML = "";
-
-      const title = (job.title || "").trim() || "Job";
-      const prodCo = (job.productionCompany || "").trim() || "Production";
-      const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
-      doc.save(filename);
     }
 
     function importJob(file) {
@@ -3228,24 +3348,59 @@ function exportSingleJob(job) {
       const prodCo = (job.productionCompany || "").trim() || "Production";
       document.title = `${title} - ${prodCo}`;
 
-      const dayRows = job.days.map(day => {
-        const calc = calculateDay(job, day);
-        return `
-          <tr>
-            <td>${esc(formatDatePretty(day.date))}</td>
-            <td>${esc(day.startTime || "")}</td>
-            <td>${day.type === "office" ? "" : esc(day.arriveTime || "")}${day.type === "production" && day.arrivePostcode ? `<br><small>${esc(day.arrivePostcode)}</small>` : ""}</td>
-            <td>${day.type === "office" ? "" : esc(day.callTime || "")}</td>
-            <td>${day.type === "office" ? "" : esc(day.wrapTime || "")}${day.type === "production" && day.wrapPostcode ? `<br><small>${esc(day.wrapPostcode)}</small>` : ""}</td>
-            <td>${day.type === "office" ? "" : esc(day.leaveTime || "")}</td>
-            <td>${esc(day.type === "office" ? (day.finishTime || day.returnTime || "") : (day.returnTime || ""))}</td>
-            <td>${day.type === "office" ? "" : (day.ulez ? "Yes" : "No")}</td>
-            <td>${day.cCharge ? "Yes" : "No"}</td>
-            <td>${esc(day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || ""))}${day.type === "collection" && day.minCharge4h ? '<br><small>Min 4h applied</small>' : ''}${day.type === "production" && day.minCharge8h ? '<br><small>Min 8h applied</small>' : ''}${day.type === "production" && day.nightShoot ? '<br><small>Night Shoot — all hours at double time</small>' : ''}${day.restDayCharge ? '<br><small>+ Rest day charge (8h standard)</small>' : ''}${calc.expenseValue ? `<br><small>Expenses: ${money(calc.expenseValue)}${day.expenseNotes ? ` — ${esc(day.expenseNotes)}` : ''}</small>` : ''}</td>
-            <td class="print-numeric">${hrs(calc.totalHours)}</td>
-          </tr>
-        `;
-      }).join("");
+      const entries = job.days.map(day => ({ day, calc: calculateDay(job, day) }));
+
+      const escText = value => esc(value || "");
+      const noteTextForDay = day => day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || "");
+
+      function chunkEntries(items, estimateUnits, firstMaxUnits, nextMaxUnits) {
+        const chunks = [];
+        let current = [];
+        let limit = firstMaxUnits;
+        let used = 0;
+
+        items.forEach(item => {
+          const units = Math.max(1, estimateUnits(item));
+          if (current.length && used + units > limit) {
+            chunks.push(current);
+            current = [];
+            used = 0;
+            limit = nextMaxUnits;
+          }
+          current.push(item);
+          used += units;
+        });
+
+        if (current.length || !chunks.length) chunks.push(current);
+        return chunks;
+      }
+
+      function estimateTimesheetUnits(entry) {
+        const { day, calc } = entry;
+        let units = 1;
+        const notes = noteTextForDay(day);
+        if (notes.length > 90) units += 1;
+        if (notes.length > 180) units += 1;
+        if (day.type === "production" && (day.arrivePostcode || day.wrapPostcode)) units += 1;
+        if (day.type === "collection" && day.minCharge4h) units += 1;
+        if (day.type === "production" && day.minCharge8h) units += 1;
+        if (day.type === "production" && day.nightShoot) units += 1;
+        if (day.restDayCharge) units += 1;
+        if (calc.expenseValue && day.expenseNotes) units += 1;
+        return units;
+      }
+
+      function estimateMoneyUnits(entry) {
+        const { day } = entry;
+        let units = 1;
+        const notes = noteTextForDay(day);
+        if (notes.length > 110) units += 1;
+        if (day.expenseNotes) units += 1;
+        if (day.type === "production" && (day.arrivePostcode || day.wrapPostcode)) units += 1;
+        return units;
+      }
+
+      const timesheetChunks = chunkEntries(entries, estimateTimesheetUnits, 10, 12);
 
       let totalHours = 0;
       let standardHours = 0;
@@ -3256,8 +3411,7 @@ function exportSingleJob(job) {
       let labourTotal = 0;
       let totalValue = 0;
 
-      const moneyRows = job.days.map(day => {
-        const calc = calculateDay(job, day);
+      entries.forEach(({ calc }) => {
         totalHours += calc.totalHours;
         standardHours += calc.standardHours;
         halfHours += calc.halfHours;
@@ -3266,154 +3420,212 @@ function exportSingleJob(job) {
         expenseTotal += calc.expenseValue;
         labourTotal += calc.labourValue;
         totalValue += calc.value;
+      });
 
-        return `
+      function renderTimesheetRows(chunk) {
+        if (!chunk.length) {
+          return `
+            <tr>
+              <td colspan="11">No shoot days added yet.</td>
+            </tr>
+          `;
+        }
+
+        return chunk.map(({ day, calc }) => `
+          <tr>
+            <td>${esc(formatDatePretty(day.date))}</td>
+            <td>${esc(day.startTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.arriveTime || "")}${day.type === "production" && day.arrivePostcode ? `<br><small>${esc(day.arrivePostcode)}</small>` : ""}</td>
+            <td>${day.type === "office" ? "" : esc(day.callTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.wrapTime || "")}${day.type === "production" && day.wrapPostcode ? `<br><small>${esc(day.wrapPostcode)}</small>` : ""}</td>
+            <td>${day.type === "office" ? "" : esc(day.leaveTime || "")}</td>
+            <td>${esc(day.type === "office" ? (day.finishTime || day.returnTime || "") : (day.returnTime || ""))}</td>
+            <td>${day.type === "office" ? "" : (day.ulez ? "Yes" : "No")}</td>
+            <td>${day.cCharge ? "Yes" : "No"}</td>
+            <td>${esc(noteTextForDay(day))}${day.type === "collection" && day.minCharge4h ? '<br><small>Min 4h applied</small>' : ''}${day.type === "production" && day.minCharge8h ? '<br><small>Min 8h applied</small>' : ''}${day.type === "production" && day.nightShoot ? '<br><small>Night Shoot, all hours at double time</small>' : ''}${day.restDayCharge ? '<br><small>+ Rest day charge (8h standard)</small>' : ''}${calc.expenseValue ? `<br><small>Expenses: ${money(calc.expenseValue)}${day.expenseNotes ? `, ${esc(day.expenseNotes)}` : ''}</small>` : ''}</td>
+            <td class="print-numeric">${hrs(calc.totalHours)}</td>
+          </tr>
+        `).join("");
+      }
+
+      const shouldShowPage2 = entries.length > 0 || job.productionCompany || job.title || job.toName || job.yourName;
+      const moneyChunks = shouldShowPage2 ? chunkEntries(entries, estimateMoneyUnits, 9, 12) : [];
+      if (shouldShowPage2 && !moneyChunks.length) moneyChunks.push([]);
+
+      function renderMoneyRows(chunk) {
+        if (!chunk.length) {
+          return `
+            <tr>
+              <td colspan="7">No billable days added yet.</td>
+            </tr>
+          `;
+        }
+
+        return chunk.map(({ day, calc }) => `
           <tr>
             <td>${esc(formatDatePretty(day.date))}</td>
             <td class="print-numeric">${hrs(calc.standardHours)}</td>
             <td class="print-numeric">${hrs(calc.halfHours)}</td>
             <td class="print-numeric">${hrs(calc.doubleHours)}</td>
             <td class="print-numeric">${hrs(calc.officeHours)}</td>
-            <td>${money(calc.expenseValue)}${day.expenseNotes ? `<br><small>${esc(day.expenseNotes)}</small>` : ''}</td>
-            <td class="print-notes notes-cell">${esc(day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || ""))}${day.type === "production" && (day.arrivePostcode || day.wrapPostcode) ? ` • Arrive PC: ${esc(day.arrivePostcode || "-")} • Wrap PC: ${esc(day.wrapPostcode || "-")}` : ''}${day.type === "collection" && day.minCharge4h ? ' • Min 4h' : ''}${day.type === "production" && day.minCharge8h ? ' • Min 8h' : ''}${day.type === "production" && day.nightShoot ? ' • Night Shoot' : ''}${day.restDayCharge ? ' • + Rest day charge' : ''}</td>
+            <td class="expense-cell">${money(calc.expenseValue)}${day.expenseNotes ? `<br><small>${esc(day.expenseNotes)}</small>` : ''}</td>
+            <td class="print-notes notes-cell">${esc(noteTextForDay(day))}${day.type === "production" && (day.arrivePostcode || day.wrapPostcode) ? ` • Arrive PC: ${esc(day.arrivePostcode || "-")} • Wrap PC: ${esc(day.wrapPostcode || "-")}` : ''}${day.type === "collection" && day.minCharge4h ? ' • Min 4h' : ''}${day.type === "production" && day.minCharge8h ? ' • Min 8h' : ''}${day.type === "production" && day.nightShoot ? ' • Night Shoot' : ''}${day.restDayCharge ? ' • + Rest day charge' : ''}</td>
           </tr>
-        `;
-      }).join("");
+        `).join("");
+      }
 
-      const shouldShowPage2 = job.days.length > 0 || job.productionCompany || job.title || job.toName || job.yourName;
+      const pageSections = [];
+      let pageNumber = 1;
 
-      refs.printRoot.innerHTML = `
-        <section class="print-page page-1">
-          <div class="print-grid-top">
-            <div class="print-block">
-              <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
-              <p><span class="print-label">Production Co:</span> <span class="print-value print-bold">${esc(job.productionCompany || "")}</span></p>
-              <p><span class="print-label">Job Title:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
-            </div>
-            <div class="print-block">
-              <p><span class="print-value">${esc(job.vehicleName || "")}</span></p>
-              <p><span class="print-label">Start Mileage:</span> <span class="print-value">${esc(job.jobMileageStart || "")}</span></p>
-              <p><span class="print-label">End Mileage:</span> <span class="print-value">${esc(job.jobMileageEnd || "")}</span></p>
-              <p><span class="print-label">Total Mileage:</span> <span class="print-value print-bold">${jobMileage(job).toFixed(1)}</span></p>
-            </div>
-            <div class="print-page-num">Page 1</div>
-          </div>
-
-          <table class="print-table timesheet">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Start</th>
-                <th>Arrive</th>
-                <th>Call</th>
-                <th>Wrap</th>
-                <th>Leave</th>
-                <th>RTB / Finish</th>
-                <th>ULEZ</th>
-                <th>C/C</th>
-                <th>Notes</th>
-                <th>Total Hours</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${dayRows}
-            </tbody>
-          </table>
-        </section>
-
-        ${shouldShowPage2 ? `
-        <section class="print-page page-2 compact">
-          <div class="print-grid-page2-top">
-            <div class="print-page2-box">
-              <div class="print-page2-title">TO:</div>
-              <p class="print-page2-name">${esc(job.toName || "")}</p>
-              ${esc(job.toAddress || "").replace(/\n/g, "<br>")}
-              <div class="gap"></div>
-              <p><span class="print-label">Prod. Co:</span> <span class="print-value print-bold">${esc(job.productionCompany || "")}</span></p>
-              <p><span class="print-label">Job:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
-              <div class="gap"></div>
-              <p><span class="print-value">Payable To ${esc(job.yourName || "Your Name")}</span></p>
+      timesheetChunks.forEach((chunk, chunkIndex) => {
+        pageSections.push(`
+          <section class="print-page page-1">
+            <div class="print-grid-top">
+              <div class="print-block">
+                <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
+                <p><span class="print-label">Production Co:</span> <span class="print-value print-bold">${esc(job.productionCompany || "")}</span></p>
+                <p><span class="print-label">Job Title:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
+              </div>
+              <div class="print-block">
+                <p><span class="print-value">${esc(job.vehicleName || "")}</span></p>
+                <p><span class="print-label">Start Mileage:</span> <span class="print-value">${esc(job.jobMileageStart || "")}</span></p>
+                <p><span class="print-label">End Mileage:</span> <span class="print-value">${esc(job.jobMileageEnd || "")}</span></p>
+                <p><span class="print-label">Total Mileage:</span> <span class="print-value print-bold">${jobMileage(job).toFixed(1)}</span></p>
+              </div>
+              <div class="print-page-num">Page ${pageNumber}</div>
             </div>
 
-            <div class="print-page2-box">
-              <div class="print-page2-title">FROM:</div>
-              <p class="print-page2-name">${esc(job.yourName || "")}</p>
-              ${esc(job.yourAddress || "").replace(/\n/g, "<br>")}
-              <div class="gap"></div>
-              <div class="print-bank-row"><span class="print-label">Sort Code</span><span class="print-value">${esc(job.yourSortCode || "")}</span></div>
-              <div class="print-bank-row"><span class="print-label">Account</span><span class="print-value">${esc(job.yourBankAccount || "")}</span></div>
-            </div>
+            ${chunkIndex > 0 ? `<div class="print-continued">Timesheet continued</div>` : ""}
 
-            <div class="print-page-num">Page 2</div>
-          </div>
+            <table class="print-table timesheet">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Start</th>
+                  <th>Arrive</th>
+                  <th>Call</th>
+                  <th>Wrap</th>
+                  <th>Leave</th>
+                  <th>RTB / Finish</th>
+                  <th>ULEZ</th>
+                  <th>C/C</th>
+                  <th>Notes</th>
+                  <th>Total Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${renderTimesheetRows(chunk)}
+              </tbody>
+            </table>
+          </section>
+        `);
+        pageNumber += 1;
+      });
 
-          <table class="print-money-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Time + Half</th>
-                <th>Double Time</th>
-                <th>Office</th>
-                <th>Expenses</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${moneyRows}
-            </tbody>
-          </table>
+      if (shouldShowPage2) {
+        moneyChunks.forEach((chunk, chunkIndex) => {
+          const isLastMoneyPage = chunkIndex === moneyChunks.length - 1;
+          pageSections.push(`
+            <section class="print-page page-2 compact">
+              <div class="print-grid-page2-top">
+                <div class="print-page2-box">
+                  <div class="print-page2-title">TO:</div>
+                  <p class="print-page2-name">${esc(job.toName || "")}</p>
+                  ${escText(job.toAddress).replace(/\n/g, "<br>")}
+                  <div class="gap"></div>
+                  <p><span class="print-label">Prod. Co:</span> <span class="print-value print-bold">${esc(job.productionCompany || "")}</span></p>
+                  <p><span class="print-label">Job:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
+                  <div class="gap"></div>
+                  <p><span class="print-value">Payable To ${esc(job.yourName || "Your Name")}</span></p>
+                </div>
 
-          <div class="print-totals">
-            <div class="print-totals-left">
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Standard hours</div>
-                <div class="print-breakdown-value print-faint">${hrs(standardHours)}</div>
-                <div class="print-breakdown-value print-faint">${money(standardHours * Number(job.settings.standardRate || 0))}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Time + half</div>
-                <div class="print-breakdown-value print-faint">${hrs(halfHours)}</div>
-                <div class="print-breakdown-value print-faint">${money(halfHours * Number(job.settings.halfRate || 0))}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Double time</div>
-                <div class="print-breakdown-value print-faint">${hrs(doubleHours)}</div>
-                <div class="print-breakdown-value print-faint">${money(doubleHours * Number(job.settings.doubleRate || 0))}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Office</div>
-                <div class="print-breakdown-value print-faint">${hrs(officeHours)}</div>
-                <div class="print-breakdown-value print-faint">${money(officeHours * Number(job.settings.officeRate || 0))}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Expenses</div>
-                <div class="print-breakdown-value print-faint">${money(expenseTotal)}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Total hours</div>
-                <div class="print-breakdown-value print-faint">${hrs(totalHours)}</div>
-              </div>
-            </div>
+                <div class="print-page2-box">
+                  <div class="print-page2-title">FROM:</div>
+                  <p class="print-page2-name">${esc(job.yourName || "")}</p>
+                  ${escText(job.yourAddress).replace(/\n/g, "<br>")}
+                  <div class="gap"></div>
+                  <div class="print-bank-row"><span class="print-label">Sort Code</span><span class="print-value">${esc(job.yourSortCode || "")}</span></div>
+                  <div class="print-bank-row"><span class="print-label">Account</span><span class="print-value">${esc(job.yourBankAccount || "")}</span></div>
+                </div>
 
-            <div class="print-totals-right">
-              <div class="print-total-row">
-                <span>Invoice total</span>
-                <span>${money(labourTotal)}</span>
+                <div class="print-page-num">Page ${pageNumber}</div>
               </div>
-              <div class="print-total-row">
-                <span>Expenses</span>
-                <span>${money(expenseTotal)}</span>
+
+              ${chunkIndex > 0 ? `<div class="print-continued">Breakdown continued</div>` : ""}
+
+              <table class="print-money-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Time + Half</th>
+                    <th>Double Time</th>
+                    <th>Office</th>
+                    <th>Expenses</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${renderMoneyRows(chunk)}
+                </tbody>
+              </table>
+
+              ${isLastMoneyPage ? `
+              <div class="print-totals">
+                <div class="print-totals-left">
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Standard hours</div>
+                    <div class="print-breakdown-value print-faint">${hrs(standardHours)}</div>
+                    <div class="print-breakdown-value print-faint">${money(standardHours * Number(job.settings.standardRate || 0))}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Time + half</div>
+                    <div class="print-breakdown-value print-faint">${hrs(halfHours)}</div>
+                    <div class="print-breakdown-value print-faint">${money(halfHours * Number(job.settings.halfRate || 0))}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Double time</div>
+                    <div class="print-breakdown-value print-faint">${hrs(doubleHours)}</div>
+                    <div class="print-breakdown-value print-faint">${money(doubleHours * Number(job.settings.doubleRate || 0))}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Office</div>
+                    <div class="print-breakdown-value print-faint">${hrs(officeHours)}</div>
+                    <div class="print-breakdown-value print-faint">${money(officeHours * Number(job.settings.officeRate || 0))}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Expenses</div>
+                    <div class="print-breakdown-value print-faint">${money(expenseTotal)}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Total hours</div>
+                    <div class="print-breakdown-value print-faint">${hrs(totalHours)}</div>
+                  </div>
+                </div>
+
+                <div class="print-totals-right">
+                  <div class="print-total-row">
+                    <span>Invoice total</span>
+                    <span>${money(labourTotal)}</span>
+                  </div>
+                  <div class="print-total-row">
+                    <span>Expenses</span>
+                    <span>${money(expenseTotal)}</span>
+                  </div>
+                  <div class="print-total-row print-grand-total">
+                    <span class="print-bold">Total incl. expenses</span>
+                    <span class="print-bold">${money(totalValue)}</span>
+                  </div>
+                </div>
               </div>
-              <div class="print-total-row print-grand-total">
-                <span class="print-bold">Total incl. expenses</span>
-                <span class="print-bold">${money(totalValue)}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-        ` : ""}
-      `;
+              ` : ""}
+            </section>
+          `);
+          pageNumber += 1;
+        });
+      }
+
+      refs.printRoot.innerHTML = pageSections.join("");
     }
 
     function renderAll() {

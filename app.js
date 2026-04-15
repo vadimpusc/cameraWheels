@@ -1136,159 +1136,74 @@
     async function exportPDF() {
       const job = activeJob();
       if (!job) return;
+      if (!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) {
+        alert("PDF export is unavailable because the PDF libraries failed to load.");
+        return;
+      }
+
+      renderPrint();
+
+      const printRoot = refs.printRoot || document.getElementById("printRoot");
+      const pages = Array.from(printRoot.querySelectorAll(".print-page"));
+      if (!pages.length) return;
+
+      const previous = {
+        display: printRoot.style.display,
+        position: printRoot.style.position,
+        left: printRoot.style.left,
+        top: printRoot.style.top,
+        width: printRoot.style.width,
+        zIndex: printRoot.style.zIndex,
+      };
+
+      document.body.classList.add("pdf-export-mode");
+      printRoot.style.display = "block";
+      printRoot.style.position = "absolute";
+      printRoot.style.left = "-99999px";
+      printRoot.style.top = "0";
+      printRoot.style.width = "277mm";
+      printRoot.style.zIndex = "-1";
+
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = doc.internal.pageSize.getHeight();
 
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 15;
-      let y = margin;
+      try {
+        for (let i = 0; i < pages.length; i++) {
+          const canvas = await window.html2canvas(pages[i], {
+            scale: Math.max(2, window.devicePixelRatio || 1),
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: "#ffffff",
+            logging: false,
+          });
 
-      function addPage() {
-        doc.addPage();
-        y = margin;
-      }
+          if (!canvas.width || !canvas.height) continue;
 
-      function checkPageBreak(needed) {
-        if (y + needed > pageHeight - margin) {
-          addPage();
+          const imgData = canvas.toDataURL("image/png");
+          const imgWidth = pdfWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+          if (i > 0) doc.addPage("a4", "landscape");
+          doc.addImage(imgData, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pdfHeight), undefined, "FAST");
         }
+
+        const title = (job.title || "").trim() || "Job";
+        const prodCo = (job.productionCompany || "").trim() || "Production";
+        const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\|?*]/g, "_");
+        doc.save(filename);
+      } finally {
+        document.body.classList.remove("pdf-export-mode");
+        printRoot.style.display = previous.display;
+        printRoot.style.position = previous.position;
+        printRoot.style.left = previous.left;
+        printRoot.style.top = previous.top;
+        printRoot.style.width = previous.width;
+        printRoot.style.zIndex = previous.zIndex;
       }
-
-      function escPDF(text) {
-        return String(text || "").replace(/"/g, "'");
-      }
-
-      doc.setFontSize(18);
-      doc.text("Camera Car Production Invoice", margin, y);
-      y += 10;
-
-      doc.setFontSize(10);
-      doc.text(`Invoice Date: ${escPDF(formatDateLong(job.invoiceDate))}`, margin, y); y += 5;
-      doc.text(`Invoice No: ${escPDF(job.invoiceNumber || "")}`, margin, y); y += 5;
-      doc.text(`Production Co: ${escPDF(job.productionCompany || "")}`, margin, y); y += 5;
-      doc.text(`Job Title: ${escPDF(job.title || "")}`, margin, y); y += 5;
-      if (job.clientRef) {
-        doc.text(`Client Ref: ${escPDF(job.clientRef)}`, margin, y); y += 5;
-      }
-
-      y += 5;
-      doc.setFontSize(14);
-      doc.text(`Vehicle: ${escPDF(job.vehicleName || "VEHICLE")}`, margin, y); y += 7;
-      doc.setFontSize(10);
-      doc.text(`Mileage: ${jobMileage(job).toFixed(1)} miles`, margin, y); y += 10;
-
-      doc.setFontSize(12);
-      doc.text("Timesheet", margin, y); y += 8;
-
-      doc.setFontSize(8);
-      const headers = ["Date", "Start", "Arrive", "Call", "Wrap", "Leave", "RTB", "ULEZ", "C/C", "Notes", "Hours"];
-      const colWidths = [22, 15, 22, 15, 22, 15, 20, 12, 12, 45, 15];
-      let x = margin;
-      headers.forEach((h, i) => {
-        doc.text(h, x, y);
-        x += colWidths[i];
-      });
-      y += 5;
-
-      job.days.forEach(day => {
-        const calc = calculateDay(job, day);
-        checkPageBreak(10);
-        x = margin;
-        const row = [
-          formatDatePretty(day.date),
-          day.startTime || "",
-          day.arriveTime || "",
-          day.callTime || "",
-          day.wrapTime || "",
-          day.leaveTime || "",
-          day.returnTime || "",
-          day.ulez ? "Yes" : "No",
-          day.cCharge ? "Yes" : "No",
-          (day.notes || "").substring(0, 30),
-          hrs(calc.totalHours)
-        ];
-        row.forEach((cell, i) => {
-          doc.text(String(cell), x, y);
-          x += colWidths[i];
-        });
-        y += 5;
-      });
-
-      y += 10;
-      checkPageBreak(60);
-
-      doc.setFontSize(12);
-      doc.text("Invoice Summary", margin, y); y += 8;
-      doc.setFontSize(10);
-
-      doc.text(`TO: ${escPDF(job.toName || "")}`, margin, y); y += 5;
-      if (job.toAddress) {
-        const addrLines = job.toAddress.split("\n");
-        addrLines.forEach(line => {
-          doc.text(escPDF(line), margin, y); y += 5;
-        });
-      }
-
-      y += 5;
-      doc.text(`FROM: ${escPDF(job.yourName || "")}`, margin, y); y += 5;
-      if (job.yourAddress) {
-        const addrLines = job.yourAddress.split("\n");
-        addrLines.forEach(line => {
-          doc.text(escPDF(line), margin, y); y += 5;
-        });
-      }
-
-      if (job.yourSortCode || job.yourBankAccount) {
-        y += 5;
-        doc.text(`Sort Code: ${escPDF(job.yourSortCode || "")}`, margin, y); y += 5;
-        doc.text(`Account: ${escPDF(job.yourBankAccount || "")}`, margin, y); y += 5;
-      }
-
-      let totalHours = 0, standardHours = 0, halfHours = 0, doubleHours = 0, officeHours = 0, expenseTotal = 0, labourTotal = 0;
-      job.days.forEach(day => {
-        const calc = calculateDay(job, day);
-        totalHours += calc.totalHours;
-        standardHours += calc.standardHours;
-        halfHours += calc.halfHours;
-        doubleHours += calc.doubleHours;
-        officeHours += calc.officeHours;
-        expenseTotal += calc.expenseValue;
-        labourTotal += calc.labourValue;
-      });
-
-      y += 10;
-      doc.text(`Standard: ${hrs(standardHours)} x ${money(Number(job.settings.standardRate || 0))}`, margin, y); y += 5;
-      doc.text(`Time+Half: ${hrs(halfHours)} x ${money(Number(job.settings.halfRate || 0))}`, margin, y); y += 5;
-      doc.text(`Double: ${hrs(doubleHours)} x ${money(Number(job.settings.doubleRate || 0))}`, margin, y); y += 5;
-      doc.text(`Office: ${hrs(officeHours)} x ${money(Number(job.settings.officeRate || 0))}`, margin, y); y += 5;
-      doc.text(`Expenses: ${money(expenseTotal)}`, margin, y); y += 5;
-
-      const mileage = jobMileage(job);
-      if (mileage > 0) {
-        doc.text(`Mileage: ${mileage.toFixed(1)} miles`, margin, y); y += 5;
-      }
-
-      y += 10;
-      doc.setFontSize(12);
-      doc.text(`Labour Total: ${money(labourTotal)}`, margin, y); y += 7;
-      doc.text(`Expenses: ${money(expenseTotal)}`, margin, y); y += 7;
-
-      const subtotal = labourTotal + expenseTotal;
-      if ((job.settings.vatRate || 0) > 0) {
-        const vat = subtotal * (job.settings.vatRate / 100);
-        doc.text(`VAT (${job.settings.vatRate}%): ${money(vat)}`, margin, y); y += 7;
-      }
-
-      const total = (job.settings.vatRate || 0) > 0 ? subtotal * (1 + job.settings.vatRate / 100) : subtotal;
-      doc.setFontSize(14);
-      doc.text(`TOTAL: ${money(total)}`, margin, y);
-
-      const title = (job.title || "").trim() || "Job";
-      const prodCo = (job.productionCompany || "").trim() || "Production";
-      const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
-      doc.save(filename);
     }
 
     function renderPrint() {
@@ -1298,24 +1213,63 @@
         return;
       }
 
-      const dayRows = job.days.map(day => {
-        const calc = calculateDay(job, day);
-        return `
-          <tr>
-            <td>${esc(formatDatePretty(day.date))}</td>
-            <td>${esc(day.startTime || "")}</td>
-            <td>${day.type === "office" ? "" : esc(day.arriveTime || "")}${day.type === "production" && day.arrivePostcode ? `<br><small>${esc(day.arrivePostcode)}</small>` : ""}</td>
-            <td>${day.type === "office" ? "" : esc(day.callTime || "")}</td>
-            <td>${day.type === "office" ? "" : esc(day.wrapTime || "")}${day.type === "production" && day.wrapPostcode ? `<br><small>${esc(day.wrapPostcode)}</small>` : ""}</td>
-            <td>${day.type === "office" ? "" : esc(day.leaveTime || "")}</td>
-            <td>${esc(day.type === "office" ? (day.finishTime || day.returnTime || "") : (day.returnTime || ""))}</td>
-            <td>${day.type === "office" ? "" : (day.ulez ? "Yes" : "No")}</td>
-            <td>${day.cCharge ? "Yes" : "No"}</td>
-            <td>${esc(day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || ""))}${day.type === "collection" && day.minCharge4h ? '<br><small>Min 4h applied</small>' : ''}${day.type === "production" && day.minCharge8h ? '<br><small>Min 8h applied</small>' : ''}${day.type === "production" && day.nightShoot ? '<br><small>Night Shoot — all hours at double time</small>' : ''}${day.restDayCharge ? '<br><small>+ Rest day charge (8h standard)</small>' : ''}${calc.expenseValue ? `<br><small>Expenses: ${money(calc.expenseValue)}${day.expenseNotes ? ` — ${esc(day.expenseNotes)}` : ''}</small>` : ''}</td>
-            <td class="print-numeric">${hrs(calc.totalHours)}</td>
-          </tr>
-        `;
-      }).join("");
+      const title = (job.title || "").trim() || "Job";
+      const prodCo = (job.productionCompany || "").trim() || "Production";
+      document.title = `${title} - ${prodCo}`;
+
+      const entries = job.days.map(day => ({ day, calc: calculateDay(job, day) }));
+
+      const escText = value => esc(value || "");
+      const noteTextForDay = day => day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || "");
+
+      function chunkEntries(items, estimateUnits, firstMaxUnits, nextMaxUnits) {
+        const chunks = [];
+        let current = [];
+        let limit = firstMaxUnits;
+        let used = 0;
+
+        items.forEach(item => {
+          const units = Math.max(1, estimateUnits(item));
+          if (current.length && used + units > limit) {
+            chunks.push(current);
+            current = [];
+            used = 0;
+            limit = nextMaxUnits;
+          }
+          current.push(item);
+          used += units;
+        });
+
+        if (current.length || !chunks.length) chunks.push(current);
+        return chunks;
+      }
+
+      function estimateTimesheetUnits(entry) {
+        const { day, calc } = entry;
+        let units = 1;
+        const notes = noteTextForDay(day);
+        if (notes.length > 90) units += 1;
+        if (notes.length > 180) units += 1;
+        if (day.type === "production" && (day.arrivePostcode || day.wrapPostcode)) units += 1;
+        if (day.type === "collection" && day.minCharge4h) units += 1;
+        if (day.type === "production" && day.minCharge8h) units += 1;
+        if (day.type === "production" && day.nightShoot) units += 1;
+        if (day.restDayCharge) units += 1;
+        if (calc.expenseValue && day.expenseNotes) units += 1;
+        return units;
+      }
+
+      function estimateMoneyUnits(entry) {
+        const { day } = entry;
+        let units = 1;
+        const notes = noteTextForDay(day);
+        if (notes.length > 110) units += 1;
+        if (day.expenseNotes) units += 1;
+        if (day.type === "production" && (day.arrivePostcode || day.wrapPostcode)) units += 1;
+        return units;
+      }
+
+      const timesheetChunks = chunkEntries(entries, estimateTimesheetUnits, 10, 12);
 
       let totalHours = 0;
       let standardHours = 0;
@@ -1326,17 +1280,7 @@
       let labourTotal = 0;
       let totalValue = 0;
 
-      const mileage = jobMileage(job);
-      const mileageRow = mileage > 0 ? `
-        <tr>
-          <td colspan="5"><strong>Mileage (${mileage.toFixed(1)} miles)</strong></td>
-          <td></td>
-          <td></td>
-        </tr>
-      ` : '';
-
-      const moneyRows = job.days.map(day => {
-        const calc = calculateDay(job, day);
+      entries.forEach(({ calc }) => {
         totalHours += calc.totalHours;
         standardHours += calc.standardHours;
         halfHours += calc.halfHours;
@@ -1345,178 +1289,212 @@
         expenseTotal += calc.expenseValue;
         labourTotal += calc.labourValue;
         totalValue += calc.value;
+      });
 
-        return `
+      function renderTimesheetRows(chunk) {
+        if (!chunk.length) {
+          return `
+            <tr>
+              <td colspan="11">No shoot days added yet.</td>
+            </tr>
+          `;
+        }
+
+        return chunk.map(({ day, calc }) => `
+          <tr>
+            <td>${esc(formatDatePretty(day.date))}</td>
+            <td>${esc(day.startTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.arriveTime || "")}${day.type === "production" && day.arrivePostcode ? `<br><small>${esc(day.arrivePostcode)}</small>` : ""}</td>
+            <td>${day.type === "office" ? "" : esc(day.callTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.wrapTime || "")}${day.type === "production" && day.wrapPostcode ? `<br><small>${esc(day.wrapPostcode)}</small>` : ""}</td>
+            <td>${day.type === "office" ? "" : esc(day.leaveTime || "")}</td>
+            <td>${esc(day.type === "office" ? (day.finishTime || day.returnTime || "") : (day.returnTime || ""))}</td>
+            <td>${day.type === "office" ? "" : (day.ulez ? "Yes" : "No")}</td>
+            <td>${day.cCharge ? "Yes" : "No"}</td>
+            <td>${esc(noteTextForDay(day))}${day.type === "collection" && day.minCharge4h ? '<br><small>Min 4h applied</small>' : ''}${day.type === "production" && day.minCharge8h ? '<br><small>Min 8h applied</small>' : ''}${day.type === "production" && day.nightShoot ? '<br><small>Night Shoot, all hours at double time</small>' : ''}${day.restDayCharge ? '<br><small>+ Rest day charge (8h standard)</small>' : ''}${calc.expenseValue ? `<br><small>Expenses: ${money(calc.expenseValue)}${day.expenseNotes ? `, ${esc(day.expenseNotes)}` : ''}</small>` : ''}</td>
+            <td class="print-numeric">${hrs(calc.totalHours)}</td>
+          </tr>
+        `).join("");
+      }
+
+      const shouldShowPage2 = entries.length > 0 || job.productionCompany || job.title || job.toName || job.yourName;
+      const moneyChunks = shouldShowPage2 ? chunkEntries(entries, estimateMoneyUnits, 9, 12) : [];
+      if (shouldShowPage2 && !moneyChunks.length) moneyChunks.push([]);
+
+      function renderMoneyRows(chunk) {
+        if (!chunk.length) {
+          return `
+            <tr>
+              <td colspan="7">No billable days added yet.</td>
+            </tr>
+          `;
+        }
+
+        return chunk.map(({ day, calc }) => `
           <tr>
             <td>${esc(formatDatePretty(day.date))}</td>
             <td class="print-numeric">${hrs(calc.standardHours)}</td>
             <td class="print-numeric">${hrs(calc.halfHours)}</td>
             <td class="print-numeric">${hrs(calc.doubleHours)}</td>
             <td class="print-numeric">${hrs(calc.officeHours)}</td>
-            <td>${money(calc.expenseValue)}${day.expenseNotes ? `<br><small>${esc(day.expenseNotes)}</small>` : ''}</td>
-            <td class="print-notes notes-cell">${esc(day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || ""))}${day.type === "production" && (day.arrivePostcode || day.wrapPostcode) ? ` • Arrive PC: ${esc(day.arrivePostcode || "-")} • Wrap PC: ${esc(day.wrapPostcode || "-")}` : ''}${day.type === "collection" && day.minCharge4h ? ' • Min 4h' : ''}${day.type === "production" && day.minCharge8h ? ' • Min 8h' : ''}${day.type === "production" && day.nightShoot ? ' • Night Shoot' : ''}${day.restDayCharge ? ' • + Rest day charge' : ''}</td>
+            <td class="expense-cell">${money(calc.expenseValue)}${day.expenseNotes ? `<br><small>${esc(day.expenseNotes)}</small>` : ''}</td>
+            <td class="print-notes notes-cell">${esc(noteTextForDay(day))}${day.type === "production" && (day.arrivePostcode || day.wrapPostcode) ? ` • Arrive PC: ${esc(day.arrivePostcode || "-")} • Wrap PC: ${esc(day.wrapPostcode || "-")}` : ''}${day.type === "collection" && day.minCharge4h ? ' • Min 4h' : ''}${day.type === "production" && day.minCharge8h ? ' • Min 8h' : ''}${day.type === "production" && day.nightShoot ? ' • Night Shoot' : ''}${day.restDayCharge ? ' • + Rest day charge' : ''}</td>
           </tr>
-        `;
-      }).join("");
+        `).join("");
+      }
 
-      const shouldShowPage2 = job.days.length > 0 || job.productionCompany || job.title || job.toName || job.yourName;
+      const pageSections = [];
+      let pageNumber = 1;
 
-      refs.printRoot.innerHTML = `
-        <section class="print-page page-1">
-          <div class="print-grid-top">
-            <div class="print-block">
-              <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
-              <p><span class="print-label">Invoice No:</span> <span class="print-value">${esc(job.invoiceNumber || "")}</span></p>
-              <p><span class="print-label">Production Co:</span> <span class="print-value">${esc(job.productionCompany || "")}</span></p>
-              <p><span class="print-label">Job Title:</span> <span class="print-value">${esc(job.title || "")}</span></p>
-              ${job.clientRef ? `<p><span class="print-label">Client Ref:</span> <span class="print-value">${esc(job.clientRef)}</span></p>` : ''}
-            </div>
-            <div class="print-block">
-              <p style="font-size: 14pt; font-weight: 700; margin-bottom: 8px;">${esc(job.vehicleName || "VEHICLE")}</p>
-              <p><span class="print-label">Start Mileage:</span> <span class="print-value">${esc(job.jobMileageStart || "")}</span></p>
-              <p><span class="print-label">End Mileage:</span> <span class="print-value">${esc(job.jobMileageEnd || "")}</span></p>
-              <p><span class="print-label">Total Mileage:</span> <span class="print-value">${jobMileage(job).toFixed(1)}</span></p>
-            </div>
-            <div class="print-page-num">Page 1</div>
-          </div>
-
-          <table class="print-table timesheet">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Start</th>
-                <th>Arrive</th>
-                <th>Call</th>
-                <th>Wrap</th>
-                <th>Leave</th>
-                <th>RTB / Finish</th>
-                <th>ULEZ</th>
-                <th>C/C</th>
-                <th>Notes</th>
-                <th>Total Hours</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${dayRows}
-            </tbody>
-          </table>
-        </section>
-
-        ${shouldShowPage2 ? `
-        <section class="print-page page-2 compact">
-          <div class="print-grid-page2-top">
-            <div class="print-page2-box">
-              <div class="print-page2-title">TO:</div>
-              <p class="print-page2-name">${esc(job.toName || "")}</p>
-              ${esc(job.toAddress || "").replace(/\n/g, "<br>")}
-              <div class="gap"></div>
-              <p><span class="print-label">Invoice:</span> <span class="print-value">${esc(job.invoiceNumber || "")}</span></p>
-              <p><span class="print-label">Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
-              <p><span class="print-label">Prod. Co:</span> <span class="print-value">${esc(job.productionCompany || "")}</span></p>
-              <p><span class="print-label">Job:</span> <span class="print-value">${esc(job.title || "")}</span></p>
-              ${job.clientRef ? `<p><span class="print-label">Ref:</span> <span class="print-value">${esc(job.clientRef)}</span></p>` : ''}
-              <div class="gap"></div>
-              <p><span class="print-value">Payable To ${esc(job.yourName || "Your Name")}</span></p>
+      timesheetChunks.forEach((chunk, chunkIndex) => {
+        pageSections.push(`
+          <section class="print-page page-1">
+            <div class="print-grid-top">
+              <div class="print-block">
+                <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
+                <p><span class="print-label">Production Co:</span> <span class="print-value print-bold">${esc(job.productionCompany || "")}</span></p>
+                <p><span class="print-label">Job Title:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
+              </div>
+              <div class="print-block">
+                <p><span class="print-value">${esc(job.vehicleName || "")}</span></p>
+                <p><span class="print-label">Start Mileage:</span> <span class="print-value">${esc(job.jobMileageStart || "")}</span></p>
+                <p><span class="print-label">End Mileage:</span> <span class="print-value">${esc(job.jobMileageEnd || "")}</span></p>
+                <p><span class="print-label">Total Mileage:</span> <span class="print-value print-bold">${jobMileage(job).toFixed(1)}</span></p>
+              </div>
+              <div class="print-page-num">Page ${pageNumber}</div>
             </div>
 
-            <div class="print-page2-box">
-              <div class="print-page2-title">FROM:</div>
-              <p class="print-page2-name">${esc(job.yourName || "")}</p>
-              ${esc(job.yourAddress || "").replace(/\n/g, "<br>")}
-              <div class="gap"></div>
-              <div class="print-bank-row"><span class="print-label">Sort Code</span><span class="print-value">${esc(job.yourSortCode || "")}</span></div>
-              <div class="print-bank-row"><span class="print-label">Account</span><span class="print-value">${esc(job.yourBankAccount || "")}</span></div>
-              ${job.generalNotes ? `<div class="gap"></div><p><span class="print-label">Notes:</span> <span class="print-value">${esc(job.generalNotes)}</span></p>` : ''}
-            </div>
+            ${chunkIndex > 0 ? `<div class="print-continued">Timesheet continued</div>` : ""}
 
-            <div class="print-page-num">Page 2</div>
-          </div>
+            <table class="print-table timesheet">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Start</th>
+                  <th>Arrive</th>
+                  <th>Call</th>
+                  <th>Wrap</th>
+                  <th>Leave</th>
+                  <th>RTB / Finish</th>
+                  <th>ULEZ</th>
+                  <th>C/C</th>
+                  <th>Notes</th>
+                  <th>Total Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${renderTimesheetRows(chunk)}
+              </tbody>
+            </table>
+          </section>
+        `);
+        pageNumber += 1;
+      });
 
-          <table class="print-money-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Time + Half</th>
-                <th>Double Time</th>
-                <th>Office</th>
-                <th>Expenses</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${moneyRows}
-              ${mileage > 0 ? `<tr><td colspan="6">Mileage (${mileage.toFixed(1)} mi)</td><td></td><td></td></tr>` : ''}
-            </tbody>
-          </table>
+      if (shouldShowPage2) {
+        moneyChunks.forEach((chunk, chunkIndex) => {
+          const isLastMoneyPage = chunkIndex === moneyChunks.length - 1;
+          pageSections.push(`
+            <section class="print-page page-2 compact">
+              <div class="print-grid-page2-top">
+                <div class="print-page2-box">
+                  <div class="print-page2-title">TO:</div>
+                  <p class="print-page2-name">${esc(job.toName || "")}</p>
+                  ${escText(job.toAddress).replace(/\n/g, "<br>")}
+                  <div class="gap"></div>
+                  <p><span class="print-label">Prod. Co:</span> <span class="print-value print-bold">${esc(job.productionCompany || "")}</span></p>
+                  <p><span class="print-label">Job:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
+                  <div class="gap"></div>
+                  <p><span class="print-value">Payable To ${esc(job.yourName || "Your Name")}</span></p>
+                </div>
 
-          <div class="print-totals">
-            <div class="print-totals-left">
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Standard hours</div>
-                <div class="print-breakdown-value print-faint">${hrs(standardHours)}</div>
-                <div class="print-breakdown-value print-faint">${money(standardHours * Number(job.settings.standardRate || 0))}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Time + half</div>
-                <div class="print-breakdown-value print-faint">${hrs(halfHours)}</div>
-                <div class="print-breakdown-value print-faint">${money(halfHours * Number(job.settings.halfRate || 0))}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Double time</div>
-                <div class="print-breakdown-value print-faint">${hrs(doubleHours)}</div>
-                <div class="print-breakdown-value print-faint">${money(doubleHours * Number(job.settings.doubleRate || 0))}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Office</div>
-                <div class="print-breakdown-value print-faint">${hrs(officeHours)}</div>
-                <div class="print-breakdown-value print-faint">${money(officeHours * Number(job.settings.officeRate || 0))}</div>
-              </div>
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Expenses</div>
-                <div class="print-breakdown-value print-faint">${money(expenseTotal)}</div>
-              </div>
-              ${mileage > 0 ? `<div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Mileage</div>
-                <div class="print-breakdown-value print-faint">${mileage.toFixed(1)} mi</div>
-                <div class="print-breakdown-value print-faint">-</div>
-              </div>` : ''}
-              <div class="print-breakdown-cell">
-                <div class="print-breakdown-label">Total hours</div>
-                <div class="print-breakdown-value print-faint">${hrs(totalHours)}</div>
-              </div>
-            </div>
+                <div class="print-page2-box">
+                  <div class="print-page2-title">FROM:</div>
+                  <p class="print-page2-name">${esc(job.yourName || "")}</p>
+                  ${escText(job.yourAddress).replace(/\n/g, "<br>")}
+                  <div class="gap"></div>
+                  <div class="print-bank-row"><span class="print-label">Sort Code</span><span class="print-value">${esc(job.yourSortCode || "")}</span></div>
+                  <div class="print-bank-row"><span class="print-label">Account</span><span class="print-value">${esc(job.yourBankAccount || "")}</span></div>
+                </div>
 
-            <div class="print-totals-right">
-              <div class="print-total-row">
-                <span>Labour total</span>
-                <span>${money(labourTotal)}</span>
+                <div class="print-page-num">Page ${pageNumber}</div>
               </div>
-              <div class="print-total-row">
-                <span>Expenses</span>
-                <span>${money(expenseTotal)}</span>
+
+              ${chunkIndex > 0 ? `<div class="print-continued">Breakdown continued</div>` : ""}
+
+              <table class="print-money-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Time + Half</th>
+                    <th>Double Time</th>
+                    <th>Office</th>
+                    <th>Expenses</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${renderMoneyRows(chunk)}
+                </tbody>
+              </table>
+
+              ${isLastMoneyPage ? `
+              <div class="print-totals">
+                <div class="print-totals-left">
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Standard hours</div>
+                    <div class="print-breakdown-value print-faint">${hrs(standardHours)}</div>
+                    <div class="print-breakdown-value print-faint">${money(standardHours * Number(job.settings.standardRate || 0))}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Time + half</div>
+                    <div class="print-breakdown-value print-faint">${hrs(halfHours)}</div>
+                    <div class="print-breakdown-value print-faint">${money(halfHours * Number(job.settings.halfRate || 0))}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Double time</div>
+                    <div class="print-breakdown-value print-faint">${hrs(doubleHours)}</div>
+                    <div class="print-breakdown-value print-faint">${money(doubleHours * Number(job.settings.doubleRate || 0))}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Office</div>
+                    <div class="print-breakdown-value print-faint">${hrs(officeHours)}</div>
+                    <div class="print-breakdown-value print-faint">${money(officeHours * Number(job.settings.officeRate || 0))}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Expenses</div>
+                    <div class="print-breakdown-value print-faint">${money(expenseTotal)}</div>
+                  </div>
+                  <div class="print-breakdown-cell">
+                    <div class="print-breakdown-label">Total hours</div>
+                    <div class="print-breakdown-value print-faint">${hrs(totalHours)}</div>
+                  </div>
+                </div>
+
+                <div class="print-totals-right">
+                  <div class="print-total-row">
+                    <span>Invoice total</span>
+                    <span>${money(labourTotal)}</span>
+                  </div>
+                  <div class="print-total-row">
+                    <span>Expenses</span>
+                    <span>${money(expenseTotal)}</span>
+                  </div>
+                  <div class="print-total-row print-grand-total">
+                    <span class="print-bold">Total incl. expenses</span>
+                    <span class="print-bold">${money(totalValue)}</span>
+                  </div>
+                </div>
               </div>
-              ${mileage > 0 ? `<div class="print-total-row">
-                <span>Mileage</span>
-                <span>${mileage.toFixed(1)} mi</span>
-              </div>` : ''}
-              ${(job.settings.vatRate || 0) > 0 ? `<div class="print-total-row">
-                <span>Subtotal</span>
-                <span>${money(labourTotal + expenseTotal)}</span>
-              </div>
-              <div class="print-total-row">
-                <span>VAT (${job.settings.vatRate}%)</span>
-                <span>${money((labourTotal + expenseTotal) * (job.settings.vatRate / 100))}</span>
-              </div>` : ''}
-              <div class="print-total-row print-grand-total">
-                <span><strong>Total${(job.settings.vatRate || 0) > 0 ? ' incl. VAT' : ''}</strong></span>
-                <strong>${money((job.settings.vatRate || 0) > 0 ? (labourTotal + expenseTotal) * (1 + job.settings.vatRate / 100) : labourTotal + expenseTotal)}</strong>
-              </div>
-            </div>
-          </div>
-        </section>
-        ` : ""}
-      `;
+              ` : ""}
+            </section>
+          `);
+          pageNumber += 1;
+        });
+      }
+
+      refs.printRoot.innerHTML = pageSections.join("");
     }
 
     function renderAll() {
@@ -1593,11 +1571,11 @@
         if (action === "duplicate-job") duplicateJob();
         if (action === "toggle-theme") toggleTheme();
         if (action === "export-pdf") {
-          if (window.jspdf && window.jspdf.jsPDF) {
-            exportPDF();
-          } else {
-            alert("PDF export is unavailable because the PDF library failed to load.");
-          }
+          renderPrint();
+          setTimeout(() => window.print(), 100);
+        }
+        if (action === "download-pdf") {
+          exportPDF();
         }
         if (action === "export-current-json") exportCurrentJSON();
         if (action === "backup-all") backupAllJobs();
