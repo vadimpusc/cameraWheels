@@ -1760,7 +1760,8 @@
       }
       if (e.key === "p" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        exportPDF();
+        renderPrint();
+        window.print();
       }
       if (e.key === "t" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();

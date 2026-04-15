@@ -1405,36 +1405,16 @@
     @media print {
       @page {
         size: A4 landscape;
-        margin: 12mm 15mm 15mm 12mm;
+        margin: 10mm;
       }
 
       html, body {
         background: #fff !important;
         color: #111 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        min-height: auto !important;
-        height: auto !important;
-        overflow: visible !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
       }
 
       body {
         padding: 0 !important;
-        margin: 0 !important;
-      }
-
-      .print-container {
-        position: relative;
-        width: 100%;
-        max-width: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: visible;
-        page-break-after: always;
-        break-after: page;
-        background: #fff;
       }
 
       .hero,
@@ -3463,7 +3443,8 @@
         const tab = btn.dataset.tab;
 
         if (action === "export-pdf") {
-          exportPDF();
+          renderPrint();
+          window.print();
           return;
         }
         
