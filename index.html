@@ -133,11 +133,24 @@
       padding: 14px 14px;
       outline: none;
       transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"] {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     textarea {
       min-height: 108px;
       resize: vertical;
+      white-space: pre-wrap;
     }
 
     input::placeholder,
@@ -251,6 +264,26 @@
       flex-wrap: wrap;
     }
 
+    .collapsible-header {
+      cursor: pointer;
+    }
+
+    .collapsible-toggle {
+      transition: transform 0.2s ease;
+    }
+
+    .collapsible-header.collapsed .collapsible-toggle {
+      transform: rotate(-90deg);
+    }
+
+    #job-info-fields.collapsed {
+      display: none;
+    }
+
+    .days-container.collapsed {
+      display: none;
+    }
+
     h2, h3 {
       margin: 0 0 6px;
       letter-spacing: -0.03em;
@@ -267,6 +300,25 @@
       max-height: calc(100vh - 290px);
       overflow: auto;
       padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.15) transparent;
+    }
+
+    .jobs::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .jobs::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .jobs::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.15);
+      border-radius: 3px;
+    }
+
+    .jobs::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.25);
     }
 
     .job {
@@ -734,6 +786,90 @@
         padding: 10px 14px;
         font-size: 0.9rem;
       }
+
+      .day-body {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+      }
+
+      .day-body .field,
+      .day-body .field.span-3,
+      .day-body .field.span-4,
+      .day-body .field.span-6,
+      .day-body .field.span-8 {
+        grid-column: span 1 !important;
+      }
+
+      .summary-mini {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .summary-grid {
+        overflow-x: auto;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .toolbar button {
+        flex: 1 1 calc(50% - 4px);
+        min-width: calc(50% - 4px);
+        font-size: 0.8rem;
+        padding: 10px 8px;
+      }
+
+      .sidebar-header,
+      .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .sidebar-header .toolbar,
+      .section-header .toolbar {
+        width: 100%;
+      }
+
+      .field label {
+        font-size: 0.82rem;
+      }
+
+      .collapsible-header {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .collapsible-header::after {
+        content: "▼";
+        font-size: 0.8rem;
+        transition: transform 0.2s ease;
+      }
+
+      .collapsible-header.collapsed::after {
+        transform: rotate(-90deg);
+      }
+
+      #job-info-fields.collapsed {
+        display: none;
+      }
+
+      #job-info-fields {
+        display: block;
+      }
+
+      #job-info-fields.collapsed {
+        display: none;
+      }
+
+      .days-container.collapsed {
+        display: none;
+      }
     }
 
     @media print {
@@ -1055,7 +1191,7 @@
           <div class="subpanel">
             <h3>Data</h3>
             <div class="muted" style="margin-bottom:12px;">
-              Every change auto-saves in this browser. Export JSON for backups.
+              Every change auto-saves in this browser. Export job data for backups to your device. If you clear browser history data will be lost.
             </div>
             <div class="toolbar">
               <button data-action="export-current-json">Export Current Job</button>
@@ -1089,14 +1225,15 @@
         <section id="tab-timings">
           <div class="panel">
             <div class="panel-inner">
-              <div class="section-header">
+              <div class="section-header collapsible-header" data-target="job-info-fields">
                 <div>
                   <h2>Job Information</h2>
                   <div class="muted">Invoice, client, mileage, and fixed TO / FROM print fields.</div>
                 </div>
+                <button class="small collapsible-toggle" data-target="job-info-fields">▼</button>
               </div>
 
-              <div class="field-grid">
+              <div id="job-info-fields" class="field-grid">
                 <div class="field span-6">
                   <label for="jobTitle">Job Title</label>
                   <input id="jobTitle" placeholder="Job Name" />
@@ -1179,7 +1316,7 @@
 
           <div class="panel">
             <div class="panel-inner">
-              <div class="section-header">
+              <div class="section-header collapsible-header" data-target="days-list-container">
                 <div>
                   <h2>Day Entries</h2>
                   <div class="muted">Add production, collection, return, or office days.</div>
@@ -1189,10 +1326,13 @@
                   <button data-action="add-day" data-type="collection">+ Collection Day</button>
                   <button data-action="add-day" data-type="return">+ Return Day</button>
                   <button data-action="add-day" data-type="office">+ Office Day</button>
+                  <button class="small collapsible-toggle" data-target="days-list-container">▼</button>
                 </div>
               </div>
 
-              <div class="days" id="daysList"></div>
+              <div id="days-list-container" class="days-container">
+                <div class="days" id="daysList"></div>
+              </div>
             </div>
           </div>
         </section>
@@ -1905,6 +2045,7 @@
       const job = activeJob();
       if (!job) return;
       const day = blankDay(type);
+      day.isNew = true;
       if (job.days.length) {
         day.date = nextDate(job.days[job.days.length - 1].date || todayISO());
       }
@@ -2316,7 +2457,9 @@
         return;
       }
 
+      let hasNewDay = false;
       refs.daysList.innerHTML = job.days.map(day => {
+        if (day.isNew) hasNewDay = true;
         const calc = calculateDay(job, day);
         const typeOptions = [
           ["production", "Production Day"],
@@ -2402,7 +2545,7 @@
         }
 
         return `
-          <div class="day-card" data-id="${day.id}">
+          <div class="day-card${day.isNew ? ' collapsed' : ''}" data-id="${day.id}">
             <div class="day-head">
               <div class="day-head-left">
                 <strong>${esc(formatDateLong(day.date) || "Day")}</strong>
@@ -2431,6 +2574,11 @@
           </div>
         `;
       }).join("");
+
+      if (hasNewDay) {
+        job.days.forEach(day => { day.isNew = false; });
+        saveState();
+      }
     }
 
     function renderSummary() {
@@ -2743,6 +2891,18 @@
         const btn = e.target.closest("[data-action]");
         const dayCard = e.target.closest(".day-card");
         const toolbar = e.target.closest(".toolbar");
+        const collapsibleHeader = e.target.closest(".collapsible-header");
+        
+        // Click on collapsible header toggle
+        if (collapsibleHeader && collapsibleHeader.classList.contains("collapsible-header")) {
+          const targetId = collapsibleHeader.dataset.target;
+          const target = document.getElementById(targetId);
+          if (target) {
+            target.classList.toggle("collapsed");
+            collapsibleHeader.classList.toggle("collapsed");
+          }
+          return;
+        }
         
         // Click on day card header (not toolbar) - toggle collapse
         if (dayCard && !toolbar && !btn) {
