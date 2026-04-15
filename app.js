@@ -1,10 +1,83 @@
 
     const STORAGE_KEY = "invoice_tool_full_v1";
     const THEME_KEY = "invoice_tool_theme_v1";
+    const ENCRYPTED_PREFIX = "ENC:";
 
     let deferredPrompt = null;
     let saveTimeout = null;
     let lastSaveTime = null;
+
+    async function deriveKey(password, salt) {
+      const encoder = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    function uint8ToBase64(uint8Array) {
+      let binary = "";
+      const chunkSize = 8192;
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.slice(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
+      }
+      return btoa(binary);
+    }
+
+    function base64ToUint8(base64String) {
+      const binary = atob(base64String);
+      const uint8 = new Uint8Array(binary.length);
+      const chunkSize = 8192;
+      for (let i = 0; i < binary.length; i += chunkSize) {
+        const chunk = binary.slice(i, i + chunkSize);
+        for (let j = 0; j < chunk.length; j++) {
+          uint8[i + j] = chunk.charCodeAt(j);
+        }
+      }
+      return uint8;
+    }
+
+    async function encryptData(data, password) {
+      const encoder = new TextEncoder();
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(password, salt);
+      const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        encoder.encode(data)
+      );
+      const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+      combined.set(salt, 0);
+      combined.set(iv, salt.length);
+      combined.set(new Uint8Array(encrypted), salt.length + iv.length);
+      return ENCRYPTED_PREFIX + uint8ToBase64(combined);
+    }
+
+    async function decryptData(encryptedBase64, password) {
+      const combined = base64ToUint8(encryptedBase64.slice(ENCRYPTED_PREFIX.length));
+      const salt = combined.slice(0, 16);
+      const iv = combined.slice(16, 28);
+      const ciphertext = combined.slice(28);
+      const key = await deriveKey(password, salt);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        key,
+        ciphertext
+      );
+      return new TextDecoder().decode(decrypted);
+    }
+
+    function isEncrypted(content) {
+      return typeof content === "string" && content.startsWith(ENCRYPTED_PREFIX);
+    }
 
     const DEFAULT_SETTINGS = {
       standardRate: 16,
@@ -385,7 +458,14 @@
       const title = safeFileName(job.title);
       const prodCo = safeFileName(job.productionCompany);
       const filename = prodCo ? `${title} - ${prodCo}.json` : `${title}.json`;
-      await downloadBlob(new Blob([JSON.stringify(job, null, 2)], { type: "application/json" }), filename);
+      const jsonData = JSON.stringify(job, null, 2);
+      const password = prompt("Enter a password to protect this file (leave empty for no protection):");
+      if (password === null) return;
+      let content = jsonData;
+      if (password && password.trim()) {
+        content = await encryptData(jsonData, password.trim());
+      }
+      await downloadBlob(new Blob([content], { type: "application/json" }), filename);
     }
 
     async function backupAllJobs() {
@@ -393,34 +473,54 @@
         exportedAt: new Date().toISOString(),
         jobs: state.jobs
       };
-      await downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), `invoice-backup-${todayISO()}.json`);
+      const jsonData = JSON.stringify(payload, null, 2);
+      const password = prompt("Enter a password to protect this backup (leave empty for no protection):");
+      if (password === null) return;
+      let content = jsonData;
+      if (password && password.trim()) {
+        content = await encryptData(jsonData, password.trim());
+      }
+      await downloadBlob(new Blob([content], { type: "application/json" }), `invoice-backup-${todayISO()}.json`);
     }
 
-    function importJob(file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const parsed = JSON.parse(reader.result);
-          const importedJobs = extractJobsFromImport(parsed).map(job => {
-            const normalized = normalizeJob(job);
-            normalized.id = uid();
-            normalized.days = normalized.days.map(d => ({ ...d, id: uid() }));
-            return normalized;
-          });
+    async function importJob(file) {
+      const content = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+      });
 
-          if (!importedJobs.length) throw new Error("No jobs found");
-
-          state.jobs = [...importedJobs.reverse(), ...state.jobs];
-          state.activeJobId = importedJobs[0].id;
-          saveState();
-          renderAll();
-
-          alert(importedJobs.length === 1 ? "1 job imported." : `${importedJobs.length} jobs imported.`);
-        } catch {
-          alert("Could not import that JSON file.");
+      try {
+        let jsonContent = content;
+        if (isEncrypted(content)) {
+          const password = prompt("This file is password protected. Enter the password:");
+          if (!password) throw new Error("No password provided");
+          try {
+            jsonContent = await decryptData(content, password);
+          } catch {
+            throw new Error("Wrong password or corrupted file");
+          }
         }
-      };
-      reader.readAsText(file);
+        const parsed = JSON.parse(jsonContent);
+        const importedJobs = extractJobsFromImport(parsed).map(job => {
+          const normalized = normalizeJob(job);
+          normalized.id = uid();
+          normalized.days = normalized.days.map(d => ({ ...d, id: uid() }));
+          return normalized;
+        });
+
+        if (!importedJobs.length) throw new Error("No jobs found");
+
+        state.jobs = [...importedJobs.reverse(), ...state.jobs];
+        state.activeJobId = importedJobs[0].id;
+        saveState();
+        renderAll();
+
+        alert(importedJobs.length === 1 ? "1 job imported." : `${importedJobs.length} jobs imported.`);
+      } catch (e) {
+        alert("Could not import that JSON file." + (e.message === "Wrong password or corrupted file" ? " Wrong password?" : ""));
+      }
     }
 
     function extractJobsFromImport(parsed) {
