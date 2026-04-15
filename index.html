@@ -9,6 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0a0d14" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <title>Camera Car Production Invoice Tool</title>
   <style>
     :root {
@@ -150,6 +151,13 @@
       border-color: rgba(215,181,109,0.45);
       box-shadow: 0 0 0 3px rgba(215,181,109,0.12);
       background: rgba(255,255,255,0.06);
+    }
+
+    input:disabled,
+    select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: var(--panel);
     }
 
     .app {
@@ -379,6 +387,9 @@
       border-radius: 22px;
       background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
       overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
     }
 
     .day-head {
@@ -412,6 +423,22 @@
       padding: 16px;
       display: grid;
       gap: 14px;
+    }
+
+    .day-card.collapsed .day-body {
+      display: none !important;
+    }
+
+    .day-card.collapsed .day-head {
+      border-bottom-color: transparent !important;
+    }
+
+    .collapse-icon {
+      transition: transform 0.2s ease;
+    }
+
+    .day-card.collapsed .collapse-icon {
+      transform: rotate(-90deg) !important;
     }
 
     .summary-mini {
@@ -1091,6 +1118,7 @@
                   <label for="vehicleName">Vehicle Plate</label>
                   <select id="vehicleName">
                     <option value="">Select vehicle plate</option>
+                    <option value="BGY">BGY</option>
                     <option value="UFO">UFO</option>
                     <option value="EXK">EXK</option>
                     <option value="TWE">TWE</option>
@@ -1273,32 +1301,32 @@
               <div class="field-grid">
                 <div class="field span-3">
                   <label for="rateStandard">Standard Rate (£)</label>
-                  <input id="rateStandard" type="number" step="0.01" />
+                  <input id="rateStandard" type="number" step="0.01" disabled />
                 </div>
                 <div class="field span-3">
                   <label for="rateHalf">Time + Half Rate (£)</label>
-                  <input id="rateHalf" type="number" step="0.01" />
+                  <input id="rateHalf" type="number" step="0.01" disabled />
                 </div>
                 <div class="field span-3">
                   <label for="rateDouble">Double Rate (£)</label>
-                  <input id="rateDouble" type="number" step="0.01" />
+                  <input id="rateDouble" type="number" step="0.01" disabled />
                 </div>
                 <div class="field span-3">
                   <label for="rateOffice">Office Rate (£)</label>
-                  <input id="rateOffice" type="number" step="0.01" />
+                  <input id="rateOffice" type="number" step="0.01" disabled />
                 </div>
 
                 <div class="field span-3">
                   <label for="thresholdStandard">Standard Threshold</label>
-                  <input id="thresholdStandard" type="number" step="0.25" />
+                  <input id="thresholdStandard" type="number" step="0.25" disabled />
                 </div>
                 <div class="field span-3">
                   <label for="thresholdHalf">Half Threshold</label>
-                  <input id="thresholdHalf" type="number" step="0.25" />
+                  <input id="thresholdHalf" type="number" step="0.25" disabled />
                 </div>
                 <div class="field span-3">
                   <label for="calcMode">Calculation Mode</label>
-                  <select id="calcMode">
+                  <select id="calcMode" disabled>
                     <option value="start_to_return">Start to RTB</option>
                     <option value="call_to_wrap">Call to Wrap</option>
                   </select>
@@ -1332,7 +1360,7 @@
       standardRate: 16,
       halfRate: 24,
       doubleRate: 32,
-      officeRate: 20,
+      officeRate: 12.5,
       standardThreshold: 8,
       halfThreshold: 16,
       calcMode: "start_to_return",
@@ -2213,14 +2241,16 @@
         }
 
         return `
-          <div class="day-card">
+          <div class="day-card" data-id="${day.id}">
             <div class="day-head">
               <div class="day-head-left">
                 <strong>${esc(formatDateLong(day.date) || "Day")}</strong>
                 <span class="day-badge">${esc(dayTypeLabel(day.type))}</span>
                 <span class="muted">${esc(formatDay(day.date))}</span>
+                <span class="collapse-icon">▼</span>
               </div>
               <div class="toolbar">
+                <button class="small" data-action="toggle-day-collapse" data-id="${day.id}">▼</button>
                 <button class="small" data-action="move-day-up" data-id="${day.id}">↑</button>
                 <button class="small" data-action="move-day-down" data-id="${day.id}">↓</button>
                 <button class="small danger" data-action="delete-day" data-id="${day.id}">Delete</button>
@@ -2546,20 +2576,34 @@
     function bindGlobalEvents() {
       document.addEventListener("click", e => {
         const btn = e.target.closest("[data-action]");
+        const dayCard = e.target.closest(".day-card");
+        const toolbar = e.target.closest(".toolbar");
+        
+        // Click on day card header (not toolbar) - toggle collapse
+        if (dayCard && !toolbar && !btn) {
+          const dayHead = e.target.closest(".day-head");
+          if (dayHead) {
+            dayCard.classList.toggle("collapsed");
+          }
+          return;
+        }
+        
         if (!btn) return;
-
+        
         const action = btn.dataset.action;
         const id = btn.dataset.id;
         const type = btn.dataset.type;
         const tab = btn.dataset.tab;
 
-        if (action === "new-job") createJob();
-        if (action === "duplicate-job") duplicateJob();
-        if (action === "toggle-theme") toggleTheme();
         if (action === "export-pdf") {
           renderPrint();
           window.print();
+          return;
         }
+        
+        if (action === "new-job") createJob();
+        if (action === "duplicate-job") duplicateJob();
+        if (action === "toggle-theme") toggleTheme();
         if (action === "export-current-json") exportCurrentJSON();
         if (action === "backup-all") backupAllJobs();
         if (action === "reset-current") resetCurrentJob();
@@ -2573,8 +2617,12 @@
         if (action === "switch-tab") switchTab(tab);
         if (action === "add-day") addDay(type);
         if (action === "delete-day") deleteDay(id);
+        if (action === "duplicate-day") duplicateDay(id);
         if (action === "move-day-up") moveDay(id, -1);
         if (action === "move-day-down") moveDay(id, 1);
+        if (action === "toggle-day-collapse") {
+          document.querySelector(`.day-card[data-id="${id}"]`)?.classList.toggle("collapsed");
+        }
       });
 
       document.addEventListener("input", e => {

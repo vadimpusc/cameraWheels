@@ -10,7 +10,7 @@
       standardRate: 16,
       halfRate: 24,
       doubleRate: 32,
-      officeRate: 20,
+      officeRate: 12.5,
       standardThreshold: 8,
       halfThreshold: 16,
       calcMode: "start_to_return",
@@ -844,6 +844,21 @@
         .replaceAll("'", "&#039;");
     }
 
+    function toggleCard(el) {
+      console.log("toggleCard clicked", event.target, event.target.className);
+      if (event.target.closest(".toolbar")) return;
+      el.classList.toggle("collapsed");
+      console.log("toggled", el.classList.contains("collapsed"));
+    }
+
+    function bindDayCardClick(e) {
+      const card = e.target.closest(".day-card");
+      if (!card) return;
+      if (e.target.closest(".toolbar")) return;
+      e.preventDefault();
+      card.classList.toggle("collapsed");
+    }
+
     function renderJobs() {
       refs.jobsCount.textContent = `${state.jobs.length} job${state.jobs.length === 1 ? "" : "s"}`;
       refs.jobsList.innerHTML = state.jobs.map(job => {
@@ -1013,7 +1028,7 @@
         }
 
         return `
-          <div class="day-card" data-action="toggle-day-collapse" data-id="${day.id}">
+          <div class="day-card" data-id="${day.id}">
             <div class="day-head">
               <div class="day-head-left">
                 <strong>${esc(formatDateLong(day.date) || "Day")}</strong>
@@ -1021,7 +1036,8 @@
                 <span class="muted">${esc(formatDay(day.date))}</span>
                 <span class="collapse-icon">▼</span>
               </div>
-              <div class="toolbar" onclick="event.stopPropagation()">
+              <div class="toolbar">
+                <button class="small" data-action="toggle-day-collapse" data-id="${day.id}">▼</button>
                 <button class="small" data-action="duplicate-day" data-id="${day.id}">Copy</button>
                 <button class="small" data-action="move-day-up" data-id="${day.id}">↑</button>
                 <button class="small" data-action="move-day-down" data-id="${day.id}">↓</button>
@@ -1112,6 +1128,164 @@
       document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.tab === state.tab);
       });
+    }
+
+    async function exportPDF() {
+      const job = activeJob();
+      if (!job) return;
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      let y = margin;
+
+      function addPage() {
+        doc.addPage();
+        y = margin;
+      }
+
+      function checkPageBreak(needed) {
+        if (y + needed > pageHeight - margin) {
+          addPage();
+        }
+      }
+
+      function escPDF(text) {
+        return String(text || "").replace(/"/g, "'");
+      }
+
+      doc.setFontSize(18);
+      doc.text("Camera Car Production Invoice", margin, y);
+      y += 10;
+
+      doc.setFontSize(10);
+      doc.text(`Invoice Date: ${escPDF(formatDateLong(job.invoiceDate))}`, margin, y); y += 5;
+      doc.text(`Invoice No: ${escPDF(job.invoiceNumber || "")}`, margin, y); y += 5;
+      doc.text(`Production Co: ${escPDF(job.productionCompany || "")}`, margin, y); y += 5;
+      doc.text(`Job Title: ${escPDF(job.title || "")}`, margin, y); y += 5;
+      if (job.clientRef) {
+        doc.text(`Client Ref: ${escPDF(job.clientRef)}`, margin, y); y += 5;
+      }
+
+      y += 5;
+      doc.setFontSize(14);
+      doc.text(`Vehicle: ${escPDF(job.vehicleName || "VEHICLE")}`, margin, y); y += 7;
+      doc.setFontSize(10);
+      doc.text(`Mileage: ${jobMileage(job).toFixed(1)} miles`, margin, y); y += 10;
+
+      doc.setFontSize(12);
+      doc.text("Timesheet", margin, y); y += 8;
+
+      doc.setFontSize(8);
+      const headers = ["Date", "Start", "Arrive", "Call", "Wrap", "Leave", "RTB", "ULEZ", "C/C", "Notes", "Hours"];
+      const colWidths = [22, 15, 22, 15, 22, 15, 20, 12, 12, 45, 15];
+      let x = margin;
+      headers.forEach((h, i) => {
+        doc.text(h, x, y);
+        x += colWidths[i];
+      });
+      y += 5;
+
+      job.days.forEach(day => {
+        const calc = calculateDay(job, day);
+        checkPageBreak(10);
+        x = margin;
+        const row = [
+          formatDatePretty(day.date),
+          day.startTime || "",
+          day.arriveTime || "",
+          day.callTime || "",
+          day.wrapTime || "",
+          day.leaveTime || "",
+          day.returnTime || "",
+          day.ulez ? "Yes" : "No",
+          day.cCharge ? "Yes" : "No",
+          (day.notes || "").substring(0, 30),
+          hrs(calc.totalHours)
+        ];
+        row.forEach((cell, i) => {
+          doc.text(String(cell), x, y);
+          x += colWidths[i];
+        });
+        y += 5;
+      });
+
+      y += 10;
+      checkPageBreak(60);
+
+      doc.setFontSize(12);
+      doc.text("Invoice Summary", margin, y); y += 8;
+      doc.setFontSize(10);
+
+      doc.text(`TO: ${escPDF(job.toName || "")}`, margin, y); y += 5;
+      if (job.toAddress) {
+        const addrLines = job.toAddress.split("\n");
+        addrLines.forEach(line => {
+          doc.text(escPDF(line), margin, y); y += 5;
+        });
+      }
+
+      y += 5;
+      doc.text(`FROM: ${escPDF(job.yourName || "")}`, margin, y); y += 5;
+      if (job.yourAddress) {
+        const addrLines = job.yourAddress.split("\n");
+        addrLines.forEach(line => {
+          doc.text(escPDF(line), margin, y); y += 5;
+        });
+      }
+
+      if (job.yourSortCode || job.yourBankAccount) {
+        y += 5;
+        doc.text(`Sort Code: ${escPDF(job.yourSortCode || "")}`, margin, y); y += 5;
+        doc.text(`Account: ${escPDF(job.yourBankAccount || "")}`, margin, y); y += 5;
+      }
+
+      let totalHours = 0, standardHours = 0, halfHours = 0, doubleHours = 0, officeHours = 0, expenseTotal = 0, labourTotal = 0;
+      job.days.forEach(day => {
+        const calc = calculateDay(job, day);
+        totalHours += calc.totalHours;
+        standardHours += calc.standardHours;
+        halfHours += calc.halfHours;
+        doubleHours += calc.doubleHours;
+        officeHours += calc.officeHours;
+        expenseTotal += calc.expenseValue;
+        labourTotal += calc.labourValue;
+      });
+
+      y += 10;
+      doc.text(`Standard: ${hrs(standardHours)} x ${money(Number(job.settings.standardRate || 0))}`, margin, y); y += 5;
+      doc.text(`Time+Half: ${hrs(halfHours)} x ${money(Number(job.settings.halfRate || 0))}`, margin, y); y += 5;
+      doc.text(`Double: ${hrs(doubleHours)} x ${money(Number(job.settings.doubleRate || 0))}`, margin, y); y += 5;
+      doc.text(`Office: ${hrs(officeHours)} x ${money(Number(job.settings.officeRate || 0))}`, margin, y); y += 5;
+      doc.text(`Expenses: ${money(expenseTotal)}`, margin, y); y += 5;
+
+      const mileage = jobMileage(job);
+      if (mileage > 0) {
+        doc.text(`Mileage: ${mileage.toFixed(1)} miles`, margin, y); y += 5;
+      }
+
+      y += 10;
+      doc.setFontSize(12);
+      doc.text(`Labour Total: ${money(labourTotal)}`, margin, y); y += 7;
+      doc.text(`Expenses: ${money(expenseTotal)}`, margin, y); y += 7;
+
+      const subtotal = labourTotal + expenseTotal;
+      if ((job.settings.vatRate || 0) > 0) {
+        const vat = subtotal * (job.settings.vatRate / 100);
+        doc.text(`VAT (${job.settings.vatRate}%): ${money(vat)}`, margin, y); y += 7;
+      }
+
+      const total = (job.settings.vatRate || 0) > 0 ? subtotal * (1 + job.settings.vatRate / 100) : subtotal;
+      doc.setFontSize(14);
+      doc.text(`TOTAL: ${money(total)}`, margin, y);
+
+      const title = job.title || "Job";
+      const prodCo = job.productionCompany || "Production";
+      const filename = `${title} - ${prodCo}.pdf`.replace(/[<>:"/\\|?*]/g, "_");
+      doc.save(filename);
     }
 
     function renderPrint() {
@@ -1386,15 +1560,6 @@
         node.addEventListener("change", handler);
       });
 
-      refs.rateStandard.addEventListener("input", e => updateSetting("standardRate", Number(e.target.value)));
-      refs.rateHalf.addEventListener("input", e => updateSetting("halfRate", Number(e.target.value)));
-      refs.rateDouble.addEventListener("input", e => updateSetting("doubleRate", Number(e.target.value)));
-      refs.rateOffice.addEventListener("input", e => updateSetting("officeRate", Number(e.target.value)));
-      refs.thresholdStandard.addEventListener("input", e => updateSetting("standardThreshold", Number(e.target.value)));
-      refs.thresholdHalf.addEventListener("input", e => updateSetting("halfThreshold", Number(e.target.value)));
-      refs.calcMode.addEventListener("change", e => updateSetting("calcMode", e.target.value));
-      refs.sundayDouble.addEventListener("change", e => updateSetting("sundayDouble", e.target.value === "true"));
-
       if (refs.vatRate) refs.vatRate.addEventListener("input", e => updateSetting("vatRate", Number(e.target.value)));
     }
 
@@ -1402,8 +1567,20 @@
     function bindGlobalEvents() {
       document.addEventListener("click", async e => {
         const btn = e.target.closest("[data-action]");
+        const dayCard = e.target.closest(".day-card");
+        const toolbar = e.target.closest(".toolbar");
+        
+        // Click on day card header (not toolbar) - toggle collapse
+        if (dayCard && !toolbar && !btn) {
+          const dayHead = e.target.closest(".day-head");
+          if (dayHead) {
+            dayCard.classList.toggle("collapsed");
+          }
+          return;
+        }
+        
         if (!btn) return;
-
+        
         const action = btn.dataset.action;
         const id = btn.dataset.id;
         const type = btn.dataset.type;
@@ -1413,8 +1590,12 @@
         if (action === "duplicate-job") duplicateJob();
         if (action === "toggle-theme") toggleTheme();
         if (action === "export-pdf") {
-          renderPrint();
-          window.print();
+          if (window.jspdf) {
+            exportPDF();
+          } else {
+            renderPrint();
+            window.print();
+          }
         }
         if (action === "export-current-json") exportCurrentJSON();
         if (action === "backup-all") backupAllJobs();
@@ -1442,7 +1623,10 @@
         if (action === "toggle-day-collapse") {
           document.querySelector(`.day-card[data-id="${id}"]`)?.classList.toggle("collapsed");
         }
-        if (action === "show-help") {
+      });
+
+      document.addEventListener("keydown", e => {
+        if (e.key === "?" || (e.shiftKey && e.key === "ArrowRight")) {
           showModal("Keyboard Shortcuts", `
             <div class="help-content">
               <h4>General</h4>
