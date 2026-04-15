@@ -364,6 +364,11 @@
       gap: 18px;
     }
 
+    .timings-panels {
+      display: grid;
+      gap: 18px;
+    }
+
     .tabs {
       display: flex;
       gap: 10px;
@@ -1223,7 +1228,8 @@
         </section>
 
         <section id="tab-timings">
-          <div class="panel">
+          <div class="timings-panels">
+            <div class="panel">
             <div class="panel-inner">
               <div class="section-header collapsible-header" data-target="job-info-fields">
                 <div>
@@ -1334,6 +1340,7 @@
                 <div class="days" id="daysList"></div>
               </div>
             </div>
+          </div>
           </div>
         </section>
 
@@ -1831,7 +1838,11 @@
       doc.setFontSize(10);
       doc.text(`Invoice Date: ${escPDF(formatDateLong(job.invoiceDate))}`, margin, y); y += 5;
       doc.text(`Invoice No: ${escPDF(job.invoiceNumber || "")}`, margin, y); y += 5;
-      doc.text(`Production Co: ${escPDF(job.productionCompany || "")}`, margin, y); y += 5;
+      doc.text(`Production Co: `, margin, y);
+      doc.setFont(undefined, 'bold');
+      doc.text(escPDF(job.productionCompany || ""), margin + 50, y);
+      doc.setFont(undefined, 'normal');
+      y += 5;
       doc.text(`Job Title: ${escPDF(job.title || "")}`, margin, y); y += 5;
       if (job.clientRef) {
         doc.text(`Client Ref: ${escPDF(job.clientRef)}`, margin, y); y += 5;
@@ -1841,7 +1852,11 @@
       doc.setFontSize(14);
       doc.text(`Vehicle: ${escPDF(job.vehicleName || "VEHICLE")}`, margin, y); y += 7;
       doc.setFontSize(10);
-      doc.text(`Mileage: ${jobMileage(job).toFixed(1)} miles`, margin, y); y += 10;
+      doc.text(`Mileage: `, margin, y);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${jobMileage(job).toFixed(1)} miles`, margin + 35, y);
+      doc.setFont(undefined, 'normal');
+      y += 10;
 
       doc.setFontSize(12);
       doc.text("Timesheet", margin, y); y += 8;
@@ -2711,14 +2726,14 @@
           <div class="print-grid-top">
             <div class="print-block">
               <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
-              <p><span class="print-label">Production Co:</span> <span class="print-value">${esc(job.productionCompany || "")}</span></p>
+              <p><span class="print-label">Production Co:</span> <span class="print-value print-bold">${esc(job.productionCompany || "")}</span></p>
               <p><span class="print-label">Job Title:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
             </div>
             <div class="print-block">
               <p><span class="print-value">${esc(job.vehicleName || "")}</span></p>
               <p><span class="print-label">Start Mileage:</span> <span class="print-value">${esc(job.jobMileageStart || "")}</span></p>
               <p><span class="print-label">End Mileage:</span> <span class="print-value">${esc(job.jobMileageEnd || "")}</span></p>
-              <p><span class="print-label">Total Mileage:</span> <span class="print-value">${jobMileage(job).toFixed(1)}</span></p>
+              <p><span class="print-label">Total Mileage:</span> <span class="print-value print-bold">${jobMileage(job).toFixed(1)}</span></p>
             </div>
             <div class="print-page-num">Page 1</div>
           </div>
@@ -2753,10 +2768,10 @@
               <p class="print-page2-name">${esc(job.toName || "")}</p>
               ${esc(job.toAddress || "").replace(/\n/g, "<br>")}
               <div class="gap"></div>
-              <p><span class="print-label">Prod. Co:</span> <span class="print-value">${esc(job.productionCompany || "")}</span></p>
+              <p><span class="print-label">Prod. Co:</span> <span class="print-value print-bold">${esc(job.productionCompany || "")}</span></p>
               <p><span class="print-label">Job:</span> <span class="print-value print-bold">${esc(job.title || "")}</span></p>
               <div class="gap"></div>
-              <p><span class="print-value print-bold">Payable To ${esc(job.yourName || "Your Name")}</span></p>
+              <p><span class="print-value">Payable To ${esc(job.yourName || "Your Name")}</span></p>
             </div>
 
             <div class="print-page2-box">
