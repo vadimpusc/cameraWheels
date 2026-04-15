@@ -264,15 +264,22 @@
       flex-wrap: wrap;
     }
 
-    .collapsible-header {
+.collapsible-header {
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
     }
 
-    .collapsible-toggle {
+    .collapsible-header::after {
+      content: "▼";
+      font-size: 0.75rem;
       transition: transform 0.2s ease;
+      margin-left: 10px;
     }
 
-    .collapsible-header.collapsed .collapsible-toggle {
+    .collapsible-header.collapsed::after {
       transform: rotate(-90deg);
     }
 
@@ -488,14 +495,6 @@
 
     .day-card.collapsed .day-head {
       border-bottom-color: transparent !important;
-    }
-
-    .collapse-icon {
-      transition: transform 0.2s ease;
-    }
-
-    .day-card.collapsed .collapse-icon {
-      transform: rotate(-90deg) !important;
     }
 
     .summary-mini {
@@ -1231,12 +1230,11 @@
           <div class="timings-panels">
             <div class="panel">
             <div class="panel-inner">
-              <div class="section-header collapsible-header" data-target="job-info-fields">
+              <div class="section-header">
                 <div>
                   <h2>Job Information</h2>
                   <div class="muted">Invoice, client, mileage, and fixed TO / FROM print fields.</div>
                 </div>
-                <button class="small collapsible-toggle" data-target="job-info-fields">▼</button>
               </div>
 
               <div id="job-info-fields" class="field-grid">
@@ -1322,7 +1320,7 @@
 
           <div class="panel">
             <div class="panel-inner">
-              <div class="section-header collapsible-header" data-target="days-list-container">
+              <div class="section-header">
                 <div>
                   <h2>Day Entries</h2>
                   <div class="muted">Add production, collection, return, or office days.</div>
@@ -1332,7 +1330,6 @@
                   <button data-action="add-day" data-type="collection">+ Collection Day</button>
                   <button data-action="add-day" data-type="return">+ Return Day</button>
                   <button data-action="add-day" data-type="office">+ Office Day</button>
-                  <button class="small collapsible-toggle" data-target="days-list-container">▼</button>
                 </div>
               </div>
 
@@ -2472,9 +2469,7 @@
         return;
       }
 
-      let hasNewDay = false;
       refs.daysList.innerHTML = job.days.map(day => {
-        if (day.isNew) hasNewDay = true;
         const calc = calculateDay(job, day);
         const typeOptions = [
           ["production", "Production Day"],
@@ -2560,16 +2555,14 @@
         }
 
         return `
-          <div class="day-card${day.isNew ? ' collapsed' : ''}" data-id="${day.id}">
+          <div class="day-card collapsed" data-id="${day.id}">
             <div class="day-head">
               <div class="day-head-left">
                 <strong>${esc(formatDateLong(day.date) || "Day")}</strong>
                 <span class="day-badge">${esc(dayTypeLabel(day.type))}</span>
                 <span class="muted">${esc(formatDay(day.date))}</span>
-                <span class="collapse-icon">▼</span>
               </div>
               <div class="toolbar">
-                <button class="small" data-action="toggle-day-collapse" data-id="${day.id}">▼</button>
                 <button class="small" data-action="move-day-up" data-id="${day.id}">↑</button>
                 <button class="small" data-action="move-day-down" data-id="${day.id}">↓</button>
                 <button class="small danger" data-action="delete-day" data-id="${day.id}">Delete</button>
@@ -2589,11 +2582,6 @@
           </div>
         `;
       }).join("");
-
-      if (hasNewDay) {
-        job.days.forEach(day => { day.isNew = false; });
-        saveState();
-      }
     }
 
     function renderSummary() {
@@ -2906,18 +2894,6 @@
         const btn = e.target.closest("[data-action]");
         const dayCard = e.target.closest(".day-card");
         const toolbar = e.target.closest(".toolbar");
-        const collapsibleHeader = e.target.closest(".collapsible-header");
-        
-        // Click on collapsible header toggle
-        if (collapsibleHeader && collapsibleHeader.classList.contains("collapsible-header")) {
-          const targetId = collapsibleHeader.dataset.target;
-          const target = document.getElementById(targetId);
-          if (target) {
-            target.classList.toggle("collapsed");
-            collapsibleHeader.classList.toggle("collapsed");
-          }
-          return;
-        }
         
         // Click on day card header (not toolbar) - toggle collapse
         if (dayCard && !toolbar && !btn) {
@@ -2960,9 +2936,6 @@
         if (action === "duplicate-day") duplicateDay(id);
         if (action === "move-day-up") moveDay(id, -1);
         if (action === "move-day-down") moveDay(id, 1);
-        if (action === "toggle-day-collapse") {
-          document.querySelector(`.day-card[data-id="${id}"]`)?.classList.toggle("collapsed");
-        }
       });
 
       document.addEventListener("input", e => {
