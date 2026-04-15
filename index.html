@@ -765,6 +765,188 @@
       display: none;
     }
 
+    body.pdf-export-mode .print-page,
+    body.pdf-export-mode .print-page * {
+      font-size: 9pt !important;
+      color: #111 !important;
+      background: #fff !important;
+      opacity: 1 !important;
+    }
+
+    body.pdf-export-mode .print-block p {
+      font-size: 9pt;
+      line-height: 1.3;
+    }
+
+    body.pdf-export-mode .print-table {
+      font-size: 8pt;
+    }
+
+    body.pdf-export-mode .print-table th,
+    body.pdf-export-mode .print-table td {
+      padding: 3px 4px;
+    }
+
+    body.pdf-export-mode .print-page2-box p {
+      font-size: 9pt;
+    }
+
+    #pdfExportRoot {
+      display: none;
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      width: 1000px;
+      background: #fff;
+      color: #111;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    #pdfExportRoot .pdf-page {
+      width: 1000px;
+      min-height: 700px;
+      page-break-after: always;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #pdfExportRoot .pdf-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    #pdfExportRoot .pdf-header-left {
+      text-align: right;
+    }
+
+    #pdfExportRoot .pdf-header-right {
+      text-align: right;
+    }
+
+    #pdfExportRoot .pdf-label {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    #pdfExportRoot .pdf-invoice-num {
+      font-size: 14px;
+      color: #666;
+    }
+
+    #pdfExportRoot .pdf-date {
+      font-size: 12px;
+      color: #666;
+    }
+
+    #pdfExportRoot .pdf-title {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #pdfExportRoot .pdf-subtitle {
+      font-size: 14px;
+    }
+
+    #pdfExportRoot .pdf-vehicle {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    #pdfExportRoot .pdf-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    #pdfExportRoot .pdf-table th,
+    #pdfExportRoot .pdf-table td {
+      border: 1px solid #ccc;
+      padding: 4px 6px;
+      text-align: left;
+    }
+
+    #pdfExportRoot .pdf-table th {
+      background: #f7f7f7;
+      font-weight: bold;
+    }
+
+    #pdfExportRoot .pdf-table .num {
+      text-align: right;
+    }
+
+    #pdfExportRoot .pdf-footer-summary {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 1px solid #ccc;
+      font-size: 12px;
+    }
+
+    #pdfExportRoot .pdf-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 30px;
+    }
+
+    #pdfExportRoot .pdf-box-title {
+      font-size: 14px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    #pdfExportRoot .pdf-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    #pdfExportRoot .pdf-address {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    #pdfExportRoot .pdf-bank {
+      font-size: 11px;
+      margin-top: 8px;
+      color: #666;
+    }
+
+    #pdfExportRoot .pdf-totals {
+      display: flex;
+      justify-content: flex-end;
+      gap: 40px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #111;
+    }
+
+    #pdfExportRoot .pdf-totals-table .pdf-row,
+    #pdfExportRoot .pdf-grand-total .pdf-row {
+      display: flex;
+      justify-content: space-between;
+      width: 250px;
+      padding: 4px 0;
+      font-size: 12px;
+    }
+
+    #pdfExportRoot .pdf-row.total {
+      border-top: 1px solid #ccc;
+    }
+
+    #pdfExportRoot .pdf-row.grand {
+      font-size: 14px;
+      font-weight: bold;
+      border-top: 2px solid #111;
+      padding-top: 8px;
+    }
+
     @media (max-width: 1120px) {
       .main-grid,
       .summary-grid {
@@ -2022,6 +2204,7 @@
   </div>
 
   <section class="print-only" id="printRoot"></section>
+  <section class="print-only" id="pdfExportRoot"></section>
   </div>
 
   <script>
@@ -2313,12 +2496,111 @@
       exportSingleJob(job);
     }
 
-    function exportSingleJob(job) {
+function exportSingleJob(job) {
       if (!job) return;
       const title = safeFileName(job.title);
       const prodCo = safeFileName(job.productionCompany);
       const filename = prodCo ? `${title} - ${prodCo}.json` : `${title}.json`;
-      downloadBlob(new Blob([JSON.stringify(job, null, 2)], { type: "application/json" }), filename);
+      downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), filename);
+    }
+
+    function renderPrintPDF() {
+      const job = activeJob();
+      if (!job) return "";
+
+      const dayRows = job.days.map(day => {
+        const calc = calculateDay(job, day);
+        return `
+          <tr>
+            <td>${esc(formatDatePretty(day.date))}</td>
+            <td>${esc(day.startTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.arriveTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.callTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.wrapTime || "")}</td>
+            <td>${day.type === "office" ? "" : esc(day.leaveTime || "")}</td>
+            <td>${esc(day.returnTime || "")}</td>
+            <td>${day.ulez ? "Y" : "N"}</td>
+            <td>${day.cCharge ? "Y" : "N"}</td>
+            <td>${esc(day.notes || "").substring(0, 20)}</td>
+            <td class="num">${hrs(calc.totalHours)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      let totalHours = 0, standardHours = 0, halfHours = 0, doubleHours = 0, officeHours = 0, expenseTotal = 0, labourTotal = 0;
+      job.days.forEach(day => {
+        const calc = calculateDay(job, day);
+        totalHours += calc.totalHours;
+        standardHours += calc.standardHours;
+        halfHours += calc.halfHours;
+        doubleHours += calc.doubleHours;
+        officeHours += calc.officeHours;
+        expenseTotal += calc.expenseValue;
+        labourTotal += calc.labourValue;
+      });
+
+      const vat = (labourTotal + expenseTotal) * (job.settings.vatRate || 0) / 100;
+      const total = labourTotal + expenseTotal + vat;
+
+      return `
+        <div class="pdf-page">
+          <div class="pdf-header">
+            <div class="pdf-header-left">
+              <div class="pdf-label">INVOICE</div>
+              <div class="pdf-invoice-num">${esc(job.invoiceNumber || "")}</div>
+              <div class="pdf-date">${esc(formatDateLong(job.invoiceDate))}</div>
+            </div>
+            <div class="pdf-header-right">
+              <div class="pdf-title">${esc(job.productionCompany || "")}</div>
+              <div class="pdf-subtitle">${esc(job.title || "")}</div>
+              <div class="pdf-vehicle">${esc(job.vehicleName || "")}</div>
+            </div>
+          </div>
+          <table class="pdf-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Start</th><th>Arrive</th><th>Call</th><th>Wrap</th><th>Leave</th><th>RTB</th><th>ULEZ</th><th>C/C</th><th>Notes</th><th>Hours</th>
+              </tr>
+            </thead>
+            <tbody>${dayRows}</tbody>
+          </table>
+          <div class="pdf-footer-summary">
+            <div>Mileage: ${jobMileage(job).toFixed(1)} miles</div>
+            <div>Total Hours: ${hrs(totalHours)}</div>
+          </div>
+        </div>
+        <div class="pdf-page">
+          <div class="pdf-grid-2col">
+            <div class="pdf-box">
+              <div class="pdf-box-title">TO:</div>
+              <div class="pdf-name">${esc(job.toName || "")}</div>
+              <div class="pdf-address">${esc(job.toAddress || "").replace(/\n/g, "<br>")}</div>
+            </div>
+            <div class="pdf-box">
+              <div class="pdf-box-title">FROM:</div>
+              <div class="pdf-name">${esc(job.yourName || "")}</div>
+              <div class="pdf-address">${esc(job.yourAddress || "").replace(/\n/g, "<br>")}</div>
+              ${job.yourSortCode ? `<div class="pdf-bank">Sort Code: ${esc(job.yourSortCode)}</div>` : ""}
+              ${job.yourBankAccount ? `<div class="pdf-bank">Account: ${esc(job.yourBankAccount)}</div>` : ""}
+            </div>
+          </div>
+          <div class="pdf-totals">
+            <div class="pdf-totals-table">
+              <div class="pdf-row"><span>Standard</span><span>${hrs(standardHours)} x ${money(job.settings.standardRate || 0)}</span></div>
+              <div class="pdf-row"><span>Time + Half</span><span>${hrs(halfHours)} x ${money(job.settings.halfRate || 0)}</span></div>
+              <div class="pdf-row"><span>Double</span><span>${hrs(doubleHours)} x ${money(job.settings.doubleRate || 0)}</span></div>
+              <div class="pdf-row"><span>Office</span><span>${hrs(officeHours)} x ${money(job.settings.officeRate || 0)}</span></div>
+              <div class="pdf-row"><span>Expenses</span><span>${money(expenseTotal)}</span></div>
+            </div>
+            <div class="pdf-grand-total">
+              <div class="pdf-row total"><span>Labour</span><span>${money(labourTotal)}</span></div>
+              <div class="pdf-row total"><span>Expenses</span><span>${money(expenseTotal)}</span></div>
+              ${vat > 0 ? `<div class="pdf-row total"><span>VAT (${job.settings.vatRate}%)</span><span>${money(vat)}</span></div>` : ""}
+              <div class="pdf-row grand"><span>TOTAL</span><span>${money(total)}</span></div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function backupAllJobs() {
@@ -2334,45 +2616,39 @@
       if (!job) return;
       if (!window.html2canvas) return;
 
-      renderPrint();
-
-      const printRoot = document.getElementById("printRoot");
-      const pages = printRoot.querySelectorAll(".print-page");
-      if (!pages.length) return;
-
-      printRoot.style.display = "block";
-      printRoot.style.position = "absolute";
-      printRoot.style.left = "-9999px";
-      printRoot.style.top = "0";
+      const pdfRoot = document.getElementById("pdfExportRoot");
+      pdfRoot.innerHTML = renderPrintPDF();
+      pdfRoot.style.display = "block";
 
       await new Promise(r => setTimeout(r, 50));
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-      const pageWidth = 287;
+      const pages = pdfRoot.querySelectorAll(".pdf-page");
+      const pdfPageWidth = 190;
+      const pdfPageHeight = 277;
+      const margin = 10;
 
       for (let i = 0; i < pages.length; i++) {
-        if (i > 0) doc.addPage("a4", "landscape");
+        if (i > 0) doc.addPage("a4", "portrait");
 
         const canvas = await html2canvas(pages[i], {
           scale: 2,
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff",
-          logging: false
+          width: 1000,
+          height: 700
         });
 
         if (!canvas.width || !canvas.height) continue;
 
         const imgData = canvas.toDataURL("image/png");
-        const pdfWidth = 287;
-        const pdfHeight = 180;
-
-        doc.addImage(imgData, "PNG", 5, 5, pdfWidth, pdfHeight);
+        doc.addImage(imgData, "PNG", margin, margin, pdfPageWidth, pdfPageHeight);
       }
 
-      printRoot.style.display = "";
+      pdfRoot.innerHTML = "";
 
       const title = (job.title || "").trim() || "Job";
       const prodCo = (job.productionCompany || "").trim() || "Production";
