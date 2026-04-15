@@ -1033,7 +1033,7 @@
         <button class="primary" data-action="new-job">+ New Job</button>
         <button data-action="duplicate-job">Duplicate Job</button>
         <button data-action="toggle-theme">Dark / Light</button>
-        <button data-action="export-pdf">Export PDF</button>
+        <button data-action="export-pdf">Export Invoice</button>
       </div>
     </header>
 
@@ -2500,6 +2500,10 @@
         return;
       }
 
+      const title = (job.title || "").trim() || "Job";
+      const prodCo = (job.productionCompany || "").trim() || "Production";
+      document.title = `${title} - ${prodCo}`;
+
       const dayRows = job.days.map(day => {
         const calc = calculateDay(job, day);
         return `
@@ -2757,11 +2761,8 @@
         const tab = btn.dataset.tab;
 
         if (action === "export-pdf") {
-          if (window.jspdf && window.jspdf.jsPDF) {
-            exportPDF();
-          } else {
-            alert("PDF export is unavailable because the PDF library failed to load.");
-          }
+          renderPrint();
+          window.print();
           return;
         }
         

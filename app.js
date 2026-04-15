@@ -1636,7 +1636,7 @@
                 <li><kbd>N</kbd> — New job</li>
                 <li><kbd>D</kbd> — Duplicate current job</li>
                 <li><kbd>T</kbd> — Toggle dark/light theme</li>
-                <li><kbd>Cmd/Ctrl + P</kbd> — Print / Export PDF</li>
+                <li><kbd>Cmd/Ctrl + P</kbd> — Print / Export Invoice</li>
               </ul>
               <h4>Navigation</h4>
               <ul>
