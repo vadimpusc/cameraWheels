@@ -2350,8 +2350,7 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-      const pageWidth = 297;
-      const margin = 5;
+      const pageWidth = 287;
 
       for (let i = 0; i < pages.length; i++) {
         if (i > 0) doc.addPage("a4", "landscape");
@@ -2360,16 +2359,17 @@
           scale: 2,
           useCORS: true,
           allowTaint: true,
-          backgroundColor: "#ffffff"
+          backgroundColor: "#ffffff",
+          logging: false
         });
 
         if (!canvas.width || !canvas.height) continue;
 
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
-        const pdfWidth = pageWidth - margin * 2;
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const imgData = canvas.toDataURL("image/png");
+        const pdfWidth = 287;
+        const pdfHeight = 180;
 
-        doc.addImage(imgData, "JPEG", margin, margin, pdfWidth, pdfHeight);
+        doc.addImage(imgData, "PNG", 5, 5, pdfWidth, pdfHeight);
       }
 
       printRoot.style.display = "";
@@ -3330,8 +3330,10 @@
         const tab = btn.dataset.tab;
 
         if (action === "export-pdf") {
+          const job = activeJob();
+          if (!job) return;
           renderPrint();
-          window.print();
+          setTimeout(() => window.print(), 100);
           return;
         }
 
