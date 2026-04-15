@@ -796,155 +796,58 @@
       position: absolute;
       left: -9999px;
       top: 0;
-      width: 1000px;
+      width: 1100px;
       background: #fff;
-      color: #111;
+      color: #000;
       font-family: Arial, sans-serif;
-      padding: 20px;
+      font-size: 12px;
+      padding: 15px;
     }
 
     #pdfExportRoot .pdf-page {
-      width: 1000px;
-      min-height: 700px;
+      width: 1100px;
+      min-height: 600px;
       page-break-after: always;
-      padding: 20px;
+      padding: 10px 15px;
       box-sizing: border-box;
     }
 
-    #pdfExportRoot .pdf-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #ccc;
-    }
+    #pdfExportRoot .pdf-h1 { font-size: 12px; margin-bottom: 3px; }
+    #pdfExportRoot .pdf-h2 { font-size: 12px; margin-bottom: 8px; }
 
-    #pdfExportRoot .pdf-header-left {
-      text-align: right;
-    }
-
-    #pdfExportRoot .pdf-header-right {
-      text-align: right;
-    }
-
-    #pdfExportRoot .pdf-label {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    #pdfExportRoot .pdf-invoice-num {
-      font-size: 14px;
-      color: #666;
-    }
-
-    #pdfExportRoot .pdf-date {
-      font-size: 12px;
-      color: #666;
-    }
-
-    #pdfExportRoot .pdf-title {
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    #pdfExportRoot .pdf-subtitle {
-      font-size: 14px;
-    }
-
-    #pdfExportRoot .pdf-vehicle {
-      font-size: 12px;
-      color: #666;
-      margin-top: 5px;
-    }
-
-    #pdfExportRoot .pdf-table {
+    #pdfExportRoot .pdf-tbl {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11px;
+      font-size: 12px;
     }
 
-    #pdfExportRoot .pdf-table th,
-    #pdfExportRoot .pdf-table td {
-      border: 1px solid #ccc;
-      padding: 4px 6px;
+    #pdfExportRoot .pdf-tbl th,
+    #pdfExportRoot .pdf-tbl td {
+      padding: 2px 4px;
       text-align: left;
     }
 
-    #pdfExportRoot .pdf-table th {
-      background: #f7f7f7;
-      font-weight: bold;
-    }
+    #pdfExportRoot .pdf-tbl .num { text-align: right; }
 
-    #pdfExportRoot .pdf-table .num {
-      text-align: right;
-    }
+    #pdfExportRoot .pdf-s1 { margin-top: 6px; font-size: 12px; }
 
-    #pdfExportRoot .pdf-footer-summary {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-      padding-top: 10px;
-      border-top: 1px solid #ccc;
-      font-size: 12px;
-    }
-
-    #pdfExportRoot .pdf-grid-2col {
+    #pdfExportRoot .pdf-2c {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 40px;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
 
-    #pdfExportRoot .pdf-box-title {
-      font-size: 14px;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
+    #pdfExportRoot .pdf-col { font-size: 12px; }
 
-    #pdfExportRoot .pdf-name {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    #pdfExportRoot .pdf-address {
+    #pdfExportRoot .pdf-sum {
+      margin-top: 15px;
       font-size: 12px;
-      line-height: 1.4;
     }
 
-    #pdfExportRoot .pdf-bank {
-      font-size: 11px;
+    #pdfExportRoot .pdf-total {
       margin-top: 8px;
-      color: #666;
-    }
-
-    #pdfExportRoot .pdf-totals {
-      display: flex;
-      justify-content: flex-end;
-      gap: 40px;
-      margin-top: 30px;
-      padding-top: 20px;
-      border-top: 2px solid #111;
-    }
-
-    #pdfExportRoot .pdf-totals-table .pdf-row,
-    #pdfExportRoot .pdf-grand-total .pdf-row {
-      display: flex;
-      justify-content: space-between;
-      width: 250px;
-      padding: 4px 0;
-      font-size: 12px;
-    }
-
-    #pdfExportRoot .pdf-row.total {
-      border-top: 1px solid #ccc;
-    }
-
-    #pdfExportRoot .pdf-row.grand {
-      font-size: 14px;
       font-weight: bold;
-      border-top: 2px solid #111;
-      padding-top: 8px;
     }
 
     @media (max-width: 1120px) {
@@ -2521,7 +2424,7 @@ function exportSingleJob(job) {
             <td>${esc(day.returnTime || "")}</td>
             <td>${day.ulez ? "Y" : "N"}</td>
             <td>${day.cCharge ? "Y" : "N"}</td>
-            <td>${esc(day.notes || "").substring(0, 20)}</td>
+            <td>${esc(day.notes || "").substring(0, 25)}</td>
             <td class="num">${hrs(calc.totalHours)}</td>
           </tr>
         `;
@@ -2544,60 +2447,35 @@ function exportSingleJob(job) {
 
       return `
         <div class="pdf-page">
-          <div class="pdf-header">
-            <div class="pdf-header-left">
-              <div class="pdf-label">INVOICE</div>
-              <div class="pdf-invoice-num">${esc(job.invoiceNumber || "")}</div>
-              <div class="pdf-date">${esc(formatDateLong(job.invoiceDate))}</div>
-            </div>
-            <div class="pdf-header-right">
-              <div class="pdf-title">${esc(job.productionCompany || "")}</div>
-              <div class="pdf-subtitle">${esc(job.title || "")}</div>
-              <div class="pdf-vehicle">${esc(job.vehicleName || "")}</div>
-            </div>
-          </div>
-          <table class="pdf-table">
-            <thead>
-              <tr>
-                <th>Date</th><th>Start</th><th>Arrive</th><th>Call</th><th>Wrap</th><th>Leave</th><th>RTB</th><th>ULEZ</th><th>C/C</th><th>Notes</th><th>Hours</th>
-              </tr>
-            </thead>
-            <tbody>${dayRows}</tbody>
+          <div class="pdf-h1">${esc(formatDateLong(job.invoiceDate))} | ${esc(job.productionCompany || "")} | ${esc(job.title || "")}</div>
+          <div class="pdf-h2">${esc(job.vehicleName || "")} | Mileage: ${jobMileage(job).toFixed(1)} miles</div>
+          <table class="pdf-tbl">
+            <tr><th>Date</th><th>Start</th><th>Arrive</th><th>Call</th><th>Wrap</th><th>Leave</th><th>RTB</th><th>ULEZ</th><th>C/C</th><th>Notes</th><th>Hours</th></tr>
+            ${dayRows}
           </table>
-          <div class="pdf-footer-summary">
-            <div>Mileage: ${jobMileage(job).toFixed(1)} miles</div>
-            <div>Total Hours: ${hrs(totalHours)}</div>
-          </div>
+          <div class="pdf-s1">Total Hours: ${hrs(totalHours)}</div>
         </div>
         <div class="pdf-page">
-          <div class="pdf-grid-2col">
-            <div class="pdf-box">
-              <div class="pdf-box-title">TO:</div>
-              <div class="pdf-name">${esc(job.toName || "")}</div>
-              <div class="pdf-address">${esc(job.toAddress || "").replace(/\n/g, "<br>")}</div>
+          <div class="pdf-2c">
+            <div class="pdf-col">
+              <div>TO: ${esc(job.toName || "")}</div>
+              <div>${esc(job.toAddress || "").replace(/\n/g, " ")}</div>
+              <div>${esc(job.productionCompany || "")} - ${esc(job.title || "")}</div>
             </div>
-            <div class="pdf-box">
-              <div class="pdf-box-title">FROM:</div>
-              <div class="pdf-name">${esc(job.yourName || "")}</div>
-              <div class="pdf-address">${esc(job.yourAddress || "").replace(/\n/g, "<br>")}</div>
-              ${job.yourSortCode ? `<div class="pdf-bank">Sort Code: ${esc(job.yourSortCode)}</div>` : ""}
-              ${job.yourBankAccount ? `<div class="pdf-bank">Account: ${esc(job.yourBankAccount)}</div>` : ""}
+            <div class="pdf-col">
+              <div>FROM: ${esc(job.yourName || "")}</div>
+              <div>${esc(job.yourAddress || "").replace(/\n/g, " ")}</div>
+              ${job.yourSortCode ? `<div>Sort Code: ${esc(job.yourSortCode)}</div>` : ""}
+              ${job.yourBankAccount ? `<div>Account: ${esc(job.yourBankAccount)}</div>` : ""}
             </div>
           </div>
-          <div class="pdf-totals">
-            <div class="pdf-totals-table">
-              <div class="pdf-row"><span>Standard</span><span>${hrs(standardHours)} x ${money(job.settings.standardRate || 0)}</span></div>
-              <div class="pdf-row"><span>Time + Half</span><span>${hrs(halfHours)} x ${money(job.settings.halfRate || 0)}</span></div>
-              <div class="pdf-row"><span>Double</span><span>${hrs(doubleHours)} x ${money(job.settings.doubleRate || 0)}</span></div>
-              <div class="pdf-row"><span>Office</span><span>${hrs(officeHours)} x ${money(job.settings.officeRate || 0)}</span></div>
-              <div class="pdf-row"><span>Expenses</span><span>${money(expenseTotal)}</span></div>
-            </div>
-            <div class="pdf-grand-total">
-              <div class="pdf-row total"><span>Labour</span><span>${money(labourTotal)}</span></div>
-              <div class="pdf-row total"><span>Expenses</span><span>${money(expenseTotal)}</span></div>
-              ${vat > 0 ? `<div class="pdf-row total"><span>VAT (${job.settings.vatRate}%)</span><span>${money(vat)}</span></div>` : ""}
-              <div class="pdf-row grand"><span>TOTAL</span><span>${money(total)}</span></div>
-            </div>
+          <div class="pdf-sum">
+            <div>Standard ${hrs(standardHours)} x ${money(job.settings.standardRate||0)} = ${money(standardHours*(job.settings.standardRate||0))}</div>
+            <div>Time+Half ${hrs(halfHours)} x ${money(job.settings.halfRate||0)} = ${money(halfHours*(job.settings.halfRate||0))}</div>
+            <div>Double ${hrs(doubleHours)} x ${money(job.settings.doubleRate||0)} = ${money(doubleHours*(job.settings.doubleRate||0))}</div>
+            <div>Office ${hrs(officeHours)} x ${money(job.settings.officeRate||0)} = ${money(officeHours*(job.settings.officeRate||0))}</div>
+            <div>Expenses = ${money(expenseTotal)}</div>
+            <div class="pdf-total">Total = ${money(total)}</div>
           </div>
         </div>
       `;
@@ -2623,12 +2501,12 @@ function exportSingleJob(job) {
       await new Promise(r => setTimeout(r, 50));
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
       const pages = pdfRoot.querySelectorAll(".pdf-page");
-      const pdfPageWidth = 190;
-      const pdfPageHeight = 277;
-      const margin = 10;
+      const pdfPageWidth = 287;
+      const pdfPageHeight = 180;
+      const margin = 8;
 
       for (let i = 0; i < pages.length; i++) {
         if (i > 0) doc.addPage("a4", "portrait");
@@ -2638,14 +2516,15 @@ function exportSingleJob(job) {
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff",
-          width: 1000,
-          height: 700
+          width: 1100,
+          height: 650
         });
 
         if (!canvas.width || !canvas.height) continue;
 
         const imgData = canvas.toDataURL("image/png");
-        doc.addImage(imgData, "PNG", margin, margin, pdfPageWidth, pdfPageHeight);
+        const h = (canvas.height * pdfPageWidth) / canvas.width;
+        doc.addImage(imgData, "PNG", margin, margin, pdfPageWidth, h);
       }
 
       pdfRoot.innerHTML = "";
