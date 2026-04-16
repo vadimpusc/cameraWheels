@@ -2655,7 +2655,7 @@
     }
 
     refs.modalCancel.addEventListener("click", () => closeModal(false));
-    refs.modalConfirm.addEventListener("click", () => closeModal(true));
+    refs.modalConfirm.addEventListener("click", () => closeModal(refs.modalInput.classList.contains("hidden") ? true : refs.modalInput.value));
     refs.modalClose.addEventListener("click", () => closeModal(false));
     refs.modalOverlay.addEventListener("click", (e) => {
       if (e.target === refs.modalOverlay) closeModal(false);
