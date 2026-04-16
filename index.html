@@ -715,6 +715,12 @@
       padding: 6px 6px 10px;
     }
 
+    .footer-tagline {
+      font-size: 0.78rem;
+      margin-top: 4px;
+      opacity: 0.7;
+    }
+
     .footer a,
     .hero p a {
       text-decoration: none;
@@ -1942,9 +1948,106 @@
         table-layout: fixed;
       }
     }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.visible {
+      display: flex;
+    }
+    .modal-box {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .modal-x {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+      min-height: auto;
+    }
+    .modal-x:hover { color: var(--text); transform: none; }
+    .modal-msg {
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .modal-foot {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .modal-btn {
+      padding: 12px 20px;
+      border-radius: 12px;
+      min-height: 44px;
+    }
+    .modal-btn.cancel {
+      background: var(--panel);
+      border-color: var(--line);
+    }
+    .modal-btn.confirm {
+      background: rgba(255,142,142,0.15);
+      border-color: rgba(255,142,142,0.3);
+      color: var(--danger);
+    }
+    .modal-input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+    .modal-input:focus {
+      outline: none;
+      border-color: rgba(215,181,109,0.45);
+      box-shadow: 0 0 0 3px rgba(215,181,109,0.12);
+    }
+    .modal-input::placeholder {
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
+  <div id="modalOverlay" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span id="modalTitle"></span>
+        <button id="modalClose" class="modal-x">&times;</button>
+      </div>
+      <div id="modalMessage" class="modal-msg"></div>
+      <input type="text" id="modalInput" class="modal-input hidden" placeholder="" />
+      <div class="modal-foot">
+        <button id="modalCancel" class="modal-btn cancel">Cancel</button>
+        <button id="modalConfirm" class="modal-btn confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
   <div class="app">
     <header class="hero screen-only">
       <div>
@@ -2271,7 +2374,8 @@
         </section>
 
         <footer class="footer screen-only">
-          © <span id="year"></span> <a href="https://sanrokuku.com" target="_blank">Created by San Roku Ku</a>
+          <div>© <span id="year"></span> <a href="https://sanrokuku.com" target="_blank">Created by San Roku Ku</a></div>
+          <div class="footer-tagline">Looking for a modern web or app design? We can help.</div>
         </footer>
       </main>
   </div>
@@ -2502,8 +2606,56 @@
       sumDouble: document.getElementById("sumDouble"),
       sumOffice: document.getElementById("sumOffice"),
       sumExpenses: document.getElementById("sumExpenses"),
-      sumValue: document.getElementById("sumValue")
+      sumValue: document.getElementById("sumValue"),
+
+      modalOverlay: document.getElementById("modalOverlay"),
+      modalTitle: document.getElementById("modalTitle"),
+      modalMessage: document.getElementById("modalMessage"),
+      modalInput: document.getElementById("modalInput"),
+      modalCancel: document.getElementById("modalCancel"),
+      modalConfirm: document.getElementById("modalConfirm"),
+      modalClose: document.getElementById("modalClose")
     };
+
+    let modalResolve = null;
+
+    function showModal(title, message, isHtml = false, options = {}) {
+      return new Promise((resolve) => {
+        refs.modalTitle.textContent = title;
+        if (isHtml) {
+          refs.modalMessage.innerHTML = message;
+        } else {
+          refs.modalMessage.textContent = message;
+        }
+        if (options.input) {
+          refs.modalInput.classList.remove("hidden");
+          refs.modalInput.value = options.defaultValue || "";
+          refs.modalInput.placeholder = options.placeholder || "";
+          refs.modalInput.type = options.inputType || "text";
+          setTimeout(() => refs.modalInput.focus(), 50);
+        } else {
+          refs.modalInput.classList.add("hidden");
+        }
+        refs.modalOverlay.classList.add("visible");
+        modalResolve = resolve;
+      });
+    }
+
+    function closeModal(result) {
+      const inputValue = refs.modalInput.value;
+      refs.modalOverlay.classList.remove("visible");
+      refs.modalInput.classList.add("hidden");
+      refs.modalInput.value = "";
+      if (modalResolve) modalResolve(result ? inputValue : result);
+      modalResolve = null;
+    }
+
+    refs.modalCancel.addEventListener("click", () => closeModal(false));
+    refs.modalConfirm.addEventListener("click", () => closeModal(true));
+    refs.modalClose.addEventListener("click", () => closeModal(false));
+    refs.modalOverlay.addEventListener("click", (e) => {
+      if (e.target === refs.modalOverlay) closeModal(false);
+    });
 
     function applyTheme(theme) {
       document.documentElement.setAttribute("data-theme", theme);
@@ -2600,10 +2752,11 @@
       renderAll();
     }
 
-    function removeJob(jobId) {
+    async function removeJob(jobId) {
       const job = state.jobs.find(j => j.id === jobId);
       if (!job) return;
-      if (!confirm(`Delete "${job.title}"?`)) return;
+      const confirmed = await showModal("Delete Job", `Delete "${job.title}"?`);
+      if (!confirmed) return;
       state.jobs = state.jobs.filter(j => j.id !== jobId);
       ensureAtLeastOneJob();
       if (!state.jobs.some(j => j.id === state.activeJobId)) {
@@ -2613,10 +2766,11 @@
       renderAll();
     }
 
-    function resetCurrentJob() {
+    async function resetCurrentJob() {
       const job = activeJob();
       if (!job) return;
-      if (!confirm("Reset the current job?")) return;
+      const confirmed = await showModal("Reset Job", "Reset the current job?");
+      if (!confirmed) return;
       const replacement = defaultJob();
       replacement.id = job.id;
       const idx = state.jobs.findIndex(j => j.id === job.id);
@@ -2625,8 +2779,9 @@
       renderAll();
     }
 
-    function resetAllJobs() {
-      if (!confirm("Reset all jobs? This will clear ALL data including all jobs and reset the app to its initial state. This action cannot be undone.")) return;
+    async function resetAllJobs() {
+      const confirmed = await showModal("Reset All", "Reset all jobs? This will clear ALL data including all jobs and reset the app to its initial state. This action cannot be undone.");
+      if (!confirmed) return;
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(THEME_KEY);
       localStorage.removeItem("install_dismissed");
@@ -2648,7 +2803,7 @@
       const prodCo = safeFileName(job.productionCompany);
       const filename = prodCo ? `${title} - ${prodCo}.json` : `${title}.json`;
       const jsonData = JSON.stringify(job, null, 2);
-      const password = prompt("Enter a password to protect this file (leave empty for no protection):");
+      const password = await showModal("Password Protection", "Enter a password to protect this file (leave empty for no protection):", false, { input: true, placeholder: "Password (optional)" });
       if (password === null) return;
       let content = jsonData;
       if (password && password.trim()) {
@@ -2663,7 +2818,7 @@
         jobs: state.jobs
       };
       const jsonData = JSON.stringify(payload, null, 2);
-      const password = prompt("Enter a password to protect this backup (leave empty for no protection):");
+      const password = await showModal("Password Protection", "Enter a password to protect this backup (leave empty for no protection):", false, { input: true, placeholder: "Password (optional)" });
       if (password === null) return;
       let content = jsonData;
       if (password && password.trim()) {
@@ -2756,7 +2911,7 @@
       try {
         let jsonContent = content;
         if (isEncrypted(content)) {
-          const password = prompt("This file is password protected. Enter the password:");
+          const password = await showModal("Password Required", "This file is password protected. Enter the password:", false, { input: true, placeholder: "Password" });
           if (!password) throw new Error("No password provided");
           try {
             jsonContent = await decryptData(content, password);
@@ -2954,9 +3109,13 @@
       renderPrint();
     }
 
-    function deleteDay(dayId) {
+    async function deleteDay(dayId) {
       const job = activeJob();
       if (!job) return;
+      const day = job.days.find(d => d.id === dayId);
+      if (!day) return;
+      const confirmed = await showModal("Delete Day Entry", `Delete "${day.title}"?`);
+      if (!confirmed) return;
       job.days = job.days.filter(d => d.id !== dayId);
       saveState();
       renderAll();
@@ -3778,7 +3937,7 @@
     }
 
     function bindGlobalEvents() {
-      document.addEventListener("click", e => {
+      document.addEventListener("click", async e => {
         const btn = e.target.closest("[data-action]");
         const dayCard = e.target.closest(".day-card");
         const toolbar = e.target.closest(".toolbar");
@@ -3817,17 +3976,17 @@
         if (action === "toggle-theme") toggleTheme();
         if (action === "export-current-json") exportCurrentJSON();
         if (action === "backup-all") backupAllJobs();
-        if (action === "reset-current") resetCurrentJob();
-        if (action === "reset-all") resetAllJobs();
+        if (action === "reset-current") await resetCurrentJob();
+        if (action === "reset-all") await resetAllJobs();
         if (action === "select-job") setActiveJob(id);
         if (action === "export-job-json") {
           const job = state.jobs.find(j => j.id === id);
           exportSingleJob(job);
         }
-        if (action === "remove-job") removeJob(id);
+        if (action === "remove-job") await removeJob(id);
         if (action === "switch-tab") switchTab(tab);
         if (action === "add-day") addDay(type);
-        if (action === "delete-day") deleteDay(id);
+        if (action === "delete-day") await deleteDay(id);
         if (action === "duplicate-day") duplicateDay(id);
         if (action === "move-day-up") moveDay(id, -1);
         if (action === "move-day-down") moveDay(id, 1);

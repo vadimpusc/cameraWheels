@@ -708,9 +708,13 @@
       renderPrint();
     }
 
-    function deleteDay(dayId) {
+    async function deleteDay(dayId) {
       const job = activeJob();
       if (!job) return;
+      const day = job.days.find(d => d.id === dayId);
+      if (!day) return;
+      const confirmed = await showModal("Delete Day Entry", `Delete "${day.title}"?`);
+      if (!confirmed) return;
       job.days = job.days.filter(d => d.id !== dayId);
       saveState();
       renderAll();
@@ -1690,7 +1694,7 @@
         if (action === "remove-job") removeJob(id);
         if (action === "switch-tab") switchTab(tab);
         if (action === "add-day") addDay(type);
-        if (action === "delete-day") deleteDay(id);
+        if (action === "delete-day") await deleteDay(id);
         if (action === "duplicate-day") duplicateDay(id);
         if (action === "move-day-up") moveDay(id, -1);
         if (action === "move-day-down") moveDay(id, 1);
