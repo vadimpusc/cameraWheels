@@ -1954,7 +1954,7 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.6);
-      z-index: 9999;
+      z-index: 100000;
       align-items: center;
       justify-content: center;
       backdrop-filter: blur(4px);
@@ -1970,6 +1970,8 @@
       max-width: 420px;
       width: 90%;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      z-index: 1;
+      position: relative;
     }
     .modal-head {
       display: flex;
@@ -2003,6 +2005,8 @@
       padding: 12px 20px;
       border-radius: 12px;
       min-height: 44px;
+      position: relative;
+      z-index: 2;
     }
     .modal-btn.cancel {
       background: var(--panel);
@@ -2646,7 +2650,7 @@
       refs.modalOverlay.classList.remove("visible");
       refs.modalInput.classList.add("hidden");
       refs.modalInput.value = "";
-      if (modalResolve) modalResolve(result ? inputValue : result);
+      if (modalResolve) modalResolve(result);
       modalResolve = null;
     }
 
