@@ -1739,7 +1739,8 @@
         const dayId = node.dataset.dayField;
         const key = node.dataset.key;
         const value = node.type === "checkbox" ? node.checked : node.value;
-        updateDay(dayId, key, value, { rerenderDays: false });
+        const shouldRerender = key === "date";
+        updateDay(dayId, key, value, { rerenderDays: shouldRerender });
       });
 
       document.addEventListener("change", e => {
@@ -1749,7 +1750,8 @@
           const key = node.dataset.key;
           let value = node.type === "checkbox" ? node.checked : node.value;
           if (node.tagName === "SELECT" && ["cCharge", "ulez", "minCharge4h", "minCharge8h"].includes(key)) value = value === "true";
-          updateDay(dayId, key, value, { rerenderDays: node.tagName === "SELECT" });
+          const shouldRerender = key === "date" || node.tagName === "SELECT";
+          updateDay(dayId, key, value, { rerenderDays: shouldRerender });
           return;
         }
 

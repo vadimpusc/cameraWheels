@@ -1,4 +1,4 @@
-const CACHE_NAME = 'camera-wheels-v7';
+const CACHE_NAME = 'camera-wheels-v8';
 const ALLOWED_ASSETS = [
   './index.html',
   './manifest.json',

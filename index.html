@@ -4003,7 +4003,8 @@
         const dayId = node.dataset.dayField;
         const key = node.dataset.key;
         const value = node.type === "checkbox" ? node.checked : node.value;
-        updateDay(dayId, key, value, { rerenderDays: false });
+        const shouldRerender = key === "date";
+        updateDay(dayId, key, value, { rerenderDays: shouldRerender });
       });
 
       document.addEventListener("change", e => {
@@ -4013,7 +4014,24 @@
           const key = node.dataset.key;
           let value = node.type === "checkbox" ? node.checked : node.value;
           if (node.tagName === "SELECT" && ["cCharge", "ulez", "minCharge4h", "minCharge8h"].includes(key)) value = value === "true";
-          updateDay(dayId, key, value, { rerenderDays: node.tagName === "SELECT" });
+          if (key === "date") {
+            const job = activeJob();
+            const day = job?.days.find(d => d.id === dayId);
+            if (day) {
+              day.date = value;
+              saveState();
+              const card = document.querySelector(`.day-card[data-id="${dayId}"]`);
+              if (card) {
+                card.querySelector(".day-head-left strong").textContent = formatDateLong(value);
+                card.querySelector(".day-head-left .muted").textContent = formatDay(value);
+              }
+              renderSummary();
+              renderPrint();
+              return;
+            }
+          }
+          const shouldRerender = node.tagName === "SELECT";
+          updateDay(dayId, key, value, { rerenderDays: shouldRerender });
           return;
         }
 
