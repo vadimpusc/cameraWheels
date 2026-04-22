@@ -1252,6 +1252,9 @@
       const pages = Array.from(printRoot.querySelectorAll(".print-page"));
       if (!pages.length) return;
 
+      const layoutMode = determineLayoutMode(job.days.length);
+      const layoutConfig = getLayoutConfig(layoutMode);
+
       const previous = {
         display: printRoot.style.display,
         position: printRoot.style.position,
@@ -1266,13 +1269,14 @@
       printRoot.style.position = "absolute";
       printRoot.style.left = "-99999px";
       printRoot.style.top = "0";
-      printRoot.style.width = "277mm";
+      printRoot.style.width = layoutConfig.pageWidth;
       printRoot.style.zIndex = "-1";
 
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const orientation = layoutMode === "long-portrait" ? "portrait" : "landscape";
+      const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
       const pdfWidth = doc.internal.pageSize.getWidth();
       const pdfHeight = doc.internal.pageSize.getHeight();
 
@@ -1292,7 +1296,7 @@
           const imgWidth = pdfWidth;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-          if (i > 0) doc.addPage("a4", "landscape");
+          if (i > 0) doc.addPage("a4", orientation);
           doc.addImage(imgData, "PNG", 0, 0, imgWidth, Math.min(imgHeight, pdfHeight), undefined, "FAST");
         }
 
@@ -1311,6 +1315,33 @@
       }
     }
 
+    function determineLayoutMode(dayCount) {
+      return dayCount > 4 ? "long-portrait" : "short-landscape";
+    }
+
+    function getLayoutConfig(layoutMode) {
+      if (layoutMode === "long-portrait") {
+        return {
+          pageWidth: "210mm",
+          timesheetFirstMax: 12,
+          timesheetNextMax: 14,
+          moneyFirstMax: 11,
+          moneyNextMax: 14,
+          fontSize: "small",
+          rowPadding: "2px",
+        };
+      }
+      return {
+        pageWidth: "277mm",
+        timesheetFirstMax: 10,
+        timesheetNextMax: 12,
+        moneyFirstMax: 9,
+        moneyNextMax: 12,
+        fontSize: "normal",
+        rowPadding: "4px",
+      };
+    }
+
     function renderPrint() {
       const job = activeJob();
       if (!job) {
@@ -1323,6 +1354,9 @@
       document.title = `${title} - ${prodCo}`;
 
       const entries = job.days.map(day => ({ day, calc: calculateDay(job, day) }));
+
+      const layoutMode = determineLayoutMode(entries.length);
+      const layoutConfig = getLayoutConfig(layoutMode);
 
       const escText = value => esc(value || "");
       const noteTextForDay = day => day.type === "office" ? (day.tasksDone || day.notes || "") : (day.notes || "");
@@ -1353,8 +1387,13 @@
         const { day, calc } = entry;
         let units = 1;
         const notes = noteTextForDay(day);
-        if (notes.length > 90) units += 1;
-        if (notes.length > 180) units += 1;
+        if (layoutMode === "long-portrait") {
+          if (notes.length > 60) units += 1;
+          if (notes.length > 120) units += 1;
+        } else {
+          if (notes.length > 90) units += 1;
+          if (notes.length > 180) units += 1;
+        }
         if (day.type === "production" && (day.arrivePostcode || day.wrapPostcode)) units += 1;
         if (day.type === "collection" && day.minCharge4h) units += 1;
         if (day.type === "production" && day.minCharge8h) units += 1;
@@ -1368,13 +1407,22 @@
         const { day } = entry;
         let units = 1;
         const notes = noteTextForDay(day);
-        if (notes.length > 110) units += 1;
+        if (layoutMode === "long-portrait") {
+          if (notes.length > 80) units += 1;
+        } else {
+          if (notes.length > 110) units += 1;
+        }
         if (day.expenseNotes) units += 1;
         if (day.type === "production" && (day.arrivePostcode || day.wrapPostcode)) units += 1;
         return units;
       }
 
-      const timesheetChunks = chunkEntries(entries, estimateTimesheetUnits, 10, 12);
+      const timesheetChunks = chunkEntries(
+        entries,
+        estimateTimesheetUnits,
+        layoutConfig.timesheetFirstMax,
+        layoutConfig.timesheetNextMax
+      );
 
       let totalHours = 0;
       let standardHours = 0;
@@ -1423,8 +1471,17 @@
       }
 
       const shouldShowPage2 = entries.length > 0 || job.productionCompany || job.title || job.toName || job.yourName;
-      const moneyChunks = shouldShowPage2 ? chunkEntries(entries, estimateMoneyUnits, 9, 12) : [];
+      const moneyChunks = shouldShowPage2
+        ? chunkEntries(
+            entries,
+            estimateMoneyUnits,
+            layoutConfig.moneyFirstMax,
+            layoutConfig.moneyNextMax
+          )
+        : [];
       if (shouldShowPage2 && !moneyChunks.length) moneyChunks.push([]);
+
+      const totalPages = timesheetChunks.length + moneyChunks.length;
 
       function renderMoneyRows(chunk) {
         if (!chunk.length) {
@@ -1452,8 +1509,10 @@
       let pageNumber = 1;
 
       timesheetChunks.forEach((chunk, chunkIndex) => {
+        const isFirstTimesheet = chunkIndex === 0;
         pageSections.push(`
-          <section class="print-page page-1">
+          <section class="print-page page-1 ${layoutConfig.fontSize === "small" ? "compact" : ""}">
+            ${isFirstTimesheet ? `
             <div class="print-grid-top">
               <div class="print-block">
                 <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
@@ -1468,10 +1527,16 @@
               </div>
               <div class="print-page-num">Page ${pageNumber}</div>
             </div>
+            ` : `
+            <div class="print-continue-header">
+              <span class="print-continue-company">${esc(job.productionCompany || "")}</span>
+              <span class="print-continue-job">${esc(job.title || "")}</span>
+              <span class="print-continue-label">Timesheet continued</span>
+              <span class="print-page-num">Page ${pageNumber}</span>
+            </div>
+            `}
 
-            ${chunkIndex > 0 ? `<div class="print-continued">Timesheet continued</div>` : ""}
-
-            <table class="print-table timesheet">
+            <table class="print-table timesheet" style="--row-padding: ${layoutConfig.rowPadding};">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -1498,9 +1563,11 @@
 
       if (shouldShowPage2) {
         moneyChunks.forEach((chunk, chunkIndex) => {
+          const isFirstMoney = chunkIndex === 0;
           const isLastMoneyPage = chunkIndex === moneyChunks.length - 1;
           pageSections.push(`
-            <section class="print-page page-2 compact">
+            <section class="print-page page-2 compact ${layoutConfig.fontSize === "small" ? "compact" : ""}">
+              ${isFirstMoney ? `
               <div class="print-grid-page2-top">
                 <div class="print-page2-box">
                   <div class="print-page2-title">TO:</div>
@@ -1524,10 +1591,16 @@
 
                 <div class="print-page-num">Page ${pageNumber}</div>
               </div>
+              ` : `
+              <div class="print-continue-header">
+                <span class="print-continue-company">${esc(job.productionCompany || "")}</span>
+                <span class="print-continue-job">${esc(job.title || "")}</span>
+                <span class="print-continue-label">Breakdown continued</span>
+                <span class="print-page-num">Page ${pageNumber}</span>
+              </div>
+              `}
 
-              ${chunkIndex > 0 ? `<div class="print-continued">Breakdown continued</div>` : ""}
-
-              <table class="print-money-table">
+              <table class="print-money-table" style="--row-padding: ${layoutConfig.rowPadding};">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -1599,6 +1672,7 @@
         });
       }
 
+      refs.printRoot.style.width = layoutConfig.pageWidth;
       refs.printRoot.innerHTML = pageSections.join("");
     }
 
