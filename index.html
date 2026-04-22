@@ -721,6 +721,13 @@
       opacity: 0.7;
     }
 
+    .footer-version {
+      font-size: 0.78rem;
+      margin-top: 4px;
+      opacity: 0.7;
+      text-align: center;
+    }
+
     .footer a,
     .hero p a {
       text-decoration: none;
@@ -2462,6 +2469,7 @@
         <footer class="footer screen-only">
           <div>© <span id="year"></span> <a href="https://sanrokuku.com" target="_blank" rel="noopener noreferrer">Created by San Roku Ku</a></div>
           <div class="footer-tagline">Looking for a modern web or app design? We can help.</div>
+          <div class="footer-version">Version 7</div>
         </footer>
       </main>
   </div>
@@ -3748,7 +3756,7 @@
         return units;
       }
 
-      const timesheetChunks = chunkEntries(entries, estimateTimesheetUnits, 10, 12);
+      const timesheetChunks = chunkEntries(entries, estimateTimesheetUnits, 20, 25);
 
       let totalHours = 0;
       let standardHours = 0;
@@ -3797,7 +3805,7 @@
       }
 
       const shouldShowPage2 = entries.length > 0 || job.productionCompany || job.title || job.toName || job.yourName;
-      const moneyChunks = shouldShowPage2 ? chunkEntries(entries, estimateMoneyUnits, 9, 12) : [];
+      const moneyChunks = shouldShowPage2 ? chunkEntries(entries, estimateMoneyUnits, 18, 22) : [];
       if (shouldShowPage2 && !moneyChunks.length) moneyChunks.push([]);
 
       function renderMoneyRows(chunk) {
@@ -3826,8 +3834,11 @@
       let pageNumber = 1;
 
       timesheetChunks.forEach((chunk, chunkIndex) => {
+        const isFirst = chunkIndex === 0;
+        const isContinued = chunkIndex > 0;
         pageSections.push(`
           <section class="print-page page-1">
+            ${isFirst ? `
             <div class="print-grid-top">
               <div class="print-block">
                 <p><span class="print-label">Invoice Date:</span> <span class="print-value">${esc(formatDateLong(job.invoiceDate))}</span></p>
@@ -3842,8 +3853,13 @@
               </div>
               <div class="print-page-num">Page ${pageNumber}</div>
             </div>
-
-            ${chunkIndex > 0 ? `<div class="print-continued">Timesheet continued</div>` : ""}
+            ` : `
+            <div class="print-continue-header">
+              <span class="print-continue-company">${esc(job.productionCompany || "Production")}</span>
+              <span class="print-continue-label">Timesheet continued</span>
+              <span class="print-page-num">Page ${pageNumber}</span>
+            </div>
+            `}
 
             <table class="print-table timesheet">
               <thead>
@@ -3872,9 +3888,12 @@
 
       if (shouldShowPage2) {
         moneyChunks.forEach((chunk, chunkIndex) => {
+          const isFirst = chunkIndex === 0;
+          const isContinued = chunkIndex > 0;
           const isLastMoneyPage = chunkIndex === moneyChunks.length - 1;
           pageSections.push(`
             <section class="print-page page-2 compact">
+              ${isFirst ? `
               <div class="print-grid-page2-top">
                 <div class="print-page2-box">
                   <div class="print-page2-title">TO:</div>
@@ -3898,8 +3917,13 @@
 
                 <div class="print-page-num">Page ${pageNumber}</div>
               </div>
-
-              ${chunkIndex > 0 ? `<div class="print-continued">Breakdown continued</div>` : ""}
+              ` : `
+              <div class="print-continue-header">
+                <span class="print-continue-company">${esc(job.productionCompany || "Production")}</span>
+                <span class="print-continue-label">Breakdown continued</span>
+                <span class="print-page-num">Page ${pageNumber}</span>
+              </div>
+              `}
 
               <table class="print-money-table">
                 <thead>
