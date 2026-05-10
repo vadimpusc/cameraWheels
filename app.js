@@ -96,7 +96,11 @@
     }
 
     function todayISO() {
-      return new Date().toISOString().slice(0, 10);
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
     }
 
     function clone(obj) {
@@ -506,6 +510,7 @@
         const importedJobs = extractJobsFromImport(parsed).map(job => {
           const normalized = normalizeJob(job);
           normalized.id = uid();
+          normalized.invoiceDate = todayISO();
           normalized.days = normalized.days.map(d => ({ ...d, id: uid() }));
           return normalized;
         });

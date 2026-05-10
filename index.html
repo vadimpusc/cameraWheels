@@ -2469,7 +2469,7 @@
         <footer class="footer screen-only">
           <div>© <span id="year"></span> <a href="https://sanrokuku.com" target="_blank" rel="noopener noreferrer">Created by San Roku Ku</a></div>
           <div class="footer-tagline">Looking for a modern web or app design? We can help.</div>
-          <div class="footer-version">Version 7</div>
+          <div class="footer-version">Version 8</div>
         </footer>
       </main>
   </div>
@@ -2569,9 +2569,13 @@
       return (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : "id_" + Math.random().toString(36).slice(2, 10);
     }
 
-    function todayISO() {
-      return new Date().toISOString().slice(0, 10);
-    }
+      function todayISO() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      }
 
     function clone(obj) {
       return JSON.parse(JSON.stringify(obj));
@@ -3017,6 +3021,7 @@
         const importedJobs = extractJobsFromImport(parsed).map(job => {
           const normalized = normalizeJob(job);
           normalized.id = uid();
+          normalized.invoiceDate = todayISO();
           normalized.days = normalized.days.map(d => ({ ...d, id: uid() }));
           return normalized;
         });
