@@ -1,4 +1,4 @@
-const CACHE_NAME = 'camera-wheels-v8';
+const CACHE_NAME = 'camera-wheels-v9';
 const ALLOWED_ASSETS = [
   './index.html',
   './manifest.json',
@@ -8,6 +8,9 @@ const ALLOWED_ASSETS = [
   './jspdf.umd.min.js',
   './html2canvas.min.js'
 ];
+const ALLOWED_URLS = new Set(
+  ALLOWED_ASSETS.map((asset) => new URL(asset, self.registration.scope).href)
+);
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -35,17 +38,14 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   if (event.request.method !== 'GET') return;
+  if (url.origin !== self.location.origin) return;
 
-  if (!ALLOWED_ASSETS.includes(url.pathname) && !ALLOWED_ASSETS.includes(url.pathname.replace(/\/$/, './index.html'))) {
-    return;
-  }
+  const isNavigation = event.request.mode === 'navigate';
+  if (!isNavigation && !ALLOWED_URLS.has(url.href)) return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((response) => {
+    fetch(event.request, { cache: 'no-store' })
+      .then((response) => {
         if (!response || response.status !== 200) {
           return response;
         }
@@ -54,7 +54,17 @@ self.addEventListener('fetch', (event) => {
           cache.put(event.request, responseToCache);
         });
         return response;
-      });
-    })
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          if (isNavigation) return caches.match('./index.html');
+          return Response.error();
+        });
+      })
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });

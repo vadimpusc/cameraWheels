@@ -2,6 +2,8 @@
     const STORAGE_KEY = "invoice_tool_full_v1";
     const THEME_KEY = "invoice_tool_theme_v1";
     const ENCRYPTED_PREFIX = "ENC:";
+    let serviceWorkerRegistration = null;
+    let updateReloadPending = false;
 
     let deferredPrompt = null;
     let saveTimeout = null;
@@ -1772,6 +1774,7 @@
         }
         if (action === "remove-job") removeJob(id);
         if (action === "switch-tab") switchTab(tab);
+        if (action === "check-update") refreshApp();
         if (action === "add-day") addDay(type);
         if (action === "delete-day") await deleteDay(id);
         if (action === "duplicate-day") duplicateDay(id);
@@ -1859,12 +1862,35 @@
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", async () => {
           try {
-            await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+            serviceWorkerRegistration = await navigator.serviceWorker.register("./sw.js", {
+              scope: "./",
+              updateViaCache: "none"
+            });
+            await serviceWorkerRegistration.update();
           } catch (error) {
             console.error("Service worker registration failed", error);
           }
         });
       }
+    }
+
+    async function refreshApp() {
+      if (updateReloadPending) return;
+      updateReloadPending = true;
+      saveState(true);
+
+      try {
+        if (serviceWorkerRegistration) {
+          await serviceWorkerRegistration.update();
+          if (serviceWorkerRegistration.waiting) {
+            serviceWorkerRegistration.waiting.postMessage("SKIP_WAITING");
+          }
+        }
+      } catch (error) {
+        console.error("Update check failed", error);
+      }
+
+      window.location.reload();
     }
 
     window.addEventListener("beforeinstallprompt", (e) => {
@@ -1904,6 +1930,8 @@
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") {
         saveState(true);
+      } else if (serviceWorkerRegistration) {
+        serviceWorkerRegistration.update().catch(() => {});
       }
     });
 

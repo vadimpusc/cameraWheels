@@ -728,6 +728,43 @@
       text-align: center;
     }
 
+    .footer-update {
+      appearance: none;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+      font-size: 0.78rem;
+      margin-top: 4px;
+      min-height: auto;
+      padding: 2px 6px;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .pull-refresh {
+      position: fixed;
+      top: max(8px, env(safe-area-inset-top));
+      left: 50%;
+      z-index: 100001;
+      transform: translate(-50%, -80px);
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--bg-2);
+      color: var(--text);
+      box-shadow: var(--shadow);
+      font-size: 0.82rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+
+    .pull-refresh.visible {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+
     .footer a,
     .hero p a {
       text-decoration: none;
@@ -2127,6 +2164,7 @@
   </style>
 </head>
 <body>
+  <div id="pullRefreshIndicator" class="pull-refresh screen-only">Pull down to refresh</div>
   <div id="modalOverlay" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-head">
@@ -2470,6 +2508,7 @@
           <div>© <span id="year"></span> <a href="https://sanrokuku.com" target="_blank" rel="noopener noreferrer">Created by San Roku Ku</a></div>
           <div class="footer-tagline">Looking for a modern web or app design? We can help.</div>
           <div class="footer-version">Version 9</div>
+          <button class="footer-update" data-action="check-update">Check for updates</button>
         </footer>
       </main>
   </div>
@@ -2481,6 +2520,8 @@
     const STORAGE_KEY = "invoice_tool_full_v1";
     const THEME_KEY = "invoice_tool_theme_v1";
     const ENCRYPTED_PREFIX = "ENC:";
+    let serviceWorkerRegistration = null;
+    let updateReloadPending = false;
 
     async function deriveKey(password, salt) {
       const encoder = new TextEncoder();
@@ -4100,6 +4141,7 @@
         }
         if (action === "remove-job") await removeJob(id);
         if (action === "switch-tab") switchTab(tab);
+        if (action === "check-update") refreshApp();
         if (action === "add-day") addDay(type);
         if (action === "delete-day") await deleteDay(id);
         if (action === "duplicate-day") duplicateDay(id);
@@ -4165,6 +4207,86 @@
     bindGlobalEvents();
     refs.year.textContent = new Date().getFullYear();
     renderAll();
+    registerServiceWorker();
+    bindPullToRefresh();
+
+    async function registerServiceWorker() {
+      if (!("serviceWorker" in navigator)) return;
+
+      try {
+        serviceWorkerRegistration = await navigator.serviceWorker.register("./sw.js", {
+          scope: "./",
+          updateViaCache: "none"
+        });
+        await serviceWorkerRegistration.update();
+      } catch (error) {
+        console.error("Service worker registration failed", error);
+      }
+    }
+
+    async function refreshApp() {
+      if (updateReloadPending) return;
+      updateReloadPending = true;
+      const indicator = document.getElementById("pullRefreshIndicator");
+      indicator.textContent = navigator.onLine ? "Checking for updates..." : "Refreshing offline...";
+      indicator.classList.add("visible");
+      saveState();
+
+      try {
+        if (serviceWorkerRegistration) {
+          await serviceWorkerRegistration.update();
+          if (serviceWorkerRegistration.waiting) {
+            serviceWorkerRegistration.waiting.postMessage("SKIP_WAITING");
+          }
+        }
+      } catch (error) {
+        console.error("Update check failed", error);
+      }
+
+      window.setTimeout(() => window.location.reload(), 250);
+    }
+
+    function bindPullToRefresh() {
+      const indicator = document.getElementById("pullRefreshIndicator");
+      let startY = 0;
+      let pulling = false;
+      let ready = false;
+
+      document.addEventListener("touchstart", (event) => {
+        if (window.scrollY !== 0 || event.touches.length !== 1) return;
+        startY = event.touches[0].clientY;
+        pulling = true;
+        ready = false;
+      }, { passive: true });
+
+      document.addEventListener("touchmove", (event) => {
+        if (!pulling) return;
+        const distance = event.touches[0].clientY - startY;
+        if (distance <= 20) {
+          indicator.classList.remove("visible");
+          return;
+        }
+        ready = distance >= 90;
+        indicator.textContent = ready ? "Release to update" : "Pull down to refresh";
+        indicator.classList.add("visible");
+      }, { passive: true });
+
+      document.addEventListener("touchend", () => {
+        if (!pulling) return;
+        pulling = false;
+        if (ready) {
+          refreshApp();
+        } else {
+          indicator.classList.remove("visible");
+        }
+      }, { passive: true });
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && serviceWorkerRegistration) {
+        serviceWorkerRegistration.update().catch(() => {});
+      }
+    });
   </script>
 </body>
 </html>
