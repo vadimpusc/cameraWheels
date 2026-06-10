@@ -363,6 +363,8 @@
         if (!state.jobs.some(j => j.id === state.activeJobId)) {
           state.activeJobId = state.jobs[0].id;
         }
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch {
         const job = defaultJob();
         state.jobs = [job];
@@ -375,7 +377,11 @@
       return {
         ...fresh,
         ...job,
-        settings: { ...DEFAULT_SETTINGS, ...(job.settings || {}) },
+        settings: {
+          ...DEFAULT_SETTINGS,
+          ...(job.settings || {}),
+          officeRate: DEFAULT_SETTINGS.officeRate
+        },
         days: Array.isArray(job.days) ? job.days.map(d => ({ ...blankDay(d.type || "production"), ...d })) : []
       };
     }
