@@ -83,7 +83,7 @@
       standardRate: 16,
       halfRate: 24,
       doubleRate: 32,
-      officeRate: 12.5,
+      officeRate: 13,
       standardThreshold: 8,
       halfThreshold: 16,
       calcMode: "start_to_return",
